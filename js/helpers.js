@@ -38,6 +38,7 @@ async function setPortfolio(_account) {
     myId.innerText = "User Id: " + _myId; // shrunk user id
     myEmail.innerText = "Current Email: " + _myEmail;
     myLinks.innerHTML = "";
+    console.log("hi");
     for (let i = 0; i < accs.length; i++) {
       let thisAcc = ethers.utils.getAddress(accs[i]);
       /// non-primary addrs
@@ -61,7 +62,6 @@ async function setPortfolio(_account) {
   } else {
     v.style.visibility = "hidden";
     myLinks.innerHTML = "";
-    myAcc.innerText = "Connected Account: " + _myAcc; // shrunk eth addr
     myId.innerText = "User Id: " + _myId; // shrunk user id
     myEmail.innerText = _myEmail;
   }

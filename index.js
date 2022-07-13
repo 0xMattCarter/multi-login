@@ -737,7 +737,11 @@ Moralis.onAccountChanged(async (_account) => {
       if (k[0]) {
         loggedIn = true;
         await run(ethers.utils.getAddress(_account));
-        console.log("check", Moralis.account, _account);
+        console.log(
+          "check",
+          ethers.utils.getAddress(user.get("ethAddress")),
+          _account
+        );
       }
     } catch (error) {
       console.log("Failed to sign login message");
@@ -769,7 +773,7 @@ async function unlink(_account) {
   if (confirm("Remove " + _account + "from your account list?")) {
     await Moralis.unlink(_account);
     console.log(_account + " removed from account list");
-    await run(ethers.utils.getAddress(Moralis.account));
+    await run(ethers.utils.getAddress(user.get("ethAddress")));
   }
 }
 
@@ -797,8 +801,12 @@ async function authenticate() {
     }
   }
   await Moralis.enableWeb3();
-  console.log("signed in user", user, Moralis.account);
-  return [true, ethers.utils.getAddress(Moralis.account)];
+  console.log(
+    "signed in user",
+    user,
+    ethers.utils.getAddress(user.get("ethAddress"))
+  );
+  return [true, ethers.utils.getAddress(user.get("ethAddress"))];
 }
 
 /// Function to add a network to user's (mm only) wallet if not already
