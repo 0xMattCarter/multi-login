@@ -1,0 +1,22 @@
+.linked {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  padding: 1rem;
+}
+
+#nets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.net-box {
+  padding: 0.5rem;
+  border: 10px solid #aaaaaa;
+  background-color: #222222;
+  color: #aaaaaa;
+  max-width: 500px;
+}
+
+#checker {
+  visibility: hidden;
+}

@@ -1,0 +1,8 @@
+Moralis stuff:
+
+server name: Omni-Login
+email: prisda@omnimint.xyz
+
+cloud code stuff:
+    - moralis-admin-cli watch-cloud-folder --moralisApiKey FT9ASGqTQIhkAAR --moralisApiSecret BtCoYmKyHBvxzEc --moralisSubdomain okritavfr1iq.usemoralis.com --autoSave 1 --moralisCloudfolder ../cloud/
+
