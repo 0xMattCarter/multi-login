@@ -19,7 +19,6 @@ async function setPortfolio(_account) {
   let myEmail = document.getElementById("current-email");
   let myLinks = document.getElementById("linked-wallets");
 
-  var _myAcc = "Not Connected";
   var _myId = "-";
   var _myEmail = "Not Set";
   // var _myLinks = ""
@@ -28,7 +27,6 @@ async function setPortfolio(_account) {
     let user = Moralis.User.current(); // current user
     let accs = await user.get("accounts");
     let allAccs = [_account];
-    _myAcc = shrinkAddr(_account);
     _myId = shrinkAddr(user.id);
     _myEmail = await user.get("email");
     if (!_myEmail) {
@@ -37,7 +35,6 @@ async function setPortfolio(_account) {
     document
       .getElementById("submit-email")
       .addEventListener("click", submitEmail);
-    myAcc.innerText = "Connected Account: " + _myAcc; // shrunk eth addr
     myId.innerText = "User Id: " + _myId; // shrunk user id
     myEmail.innerText = "Current Email: " + _myEmail;
     myLinks.innerHTML = "";

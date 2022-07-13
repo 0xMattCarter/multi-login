@@ -1,16 +1,10 @@
-/**
- * Starts moralis server
- */
+/// Starts Moralis server
 Moralis.start({
   serverUrl: "https://okritavfr1iq.usemoralis.com:2053/server",
   appId: "ybVUg3QvLuNe3lDSEdlkbj0tupQAJq1ivE5uJdCD",
-  // web3Library: ethers,
 });
-
-/**
- * All information for adding networks
- * ethereum, binance, polygon, arbitrum, avalanche, fantom, cronos
- */
+/// All information for adding networks
+/// ethereum, binance, polygon, arbitrum, avalanche, fantom, cronos
 var networks = {
   "0x0": {
     token: "",
@@ -67,11 +61,8 @@ var networks = {
     blockExplorer: "https://cronoscan.com/",
   },
 };
-
-/**
- * All ethers.js rpc providers
- * eth, bnb, matic, arb, avax, fant, cro
- */
+/// All ethers.js rpc providers
+/// eth, bnb, matic, arb, avax, fant, cro
 var providers = {
   eth: new ethers.providers.JsonRpcProvider(networks["0x1"].node),
   bnb: new ethers.providers.JsonRpcProvider(networks["0x38"].node),
@@ -81,11 +72,8 @@ var providers = {
   fant: new ethers.providers.JsonRpcProvider(networks["0xfa"].node),
   cro: new ethers.providers.JsonRpcProvider(networks["0x19"].node),
 };
-
-/**
- * All web3.js objects
- * eth, bnb, matic, arb, avax, fant, cro
- */
+/// All web3.js objects
+/// eth, bnb, matic, arb, avax, fant, cro
 var web3js = {
   eth: new Web3(networks["0x1"].node),
   bnb: new Web3(networks["0x38"].node),
@@ -95,11 +83,8 @@ var web3js = {
   fant: new Web3(networks["0xfa"].node),
   cro: new Web3(networks["0x19"].node),
 };
-
-/**
- * ABIs, address', etc
- * NOTE: current values are depricated
- */
+/// ABIs, address', etc
+/// NOTE: current values are not used
 const params = {
   nftAddr: "0x852e212DE7d8c531623cEE57Ee1Caa69A18fCaa3",
   nftAbi: [
@@ -730,23 +715,21 @@ const params = {
     },
   ],
 };
-
+/// When user changes account in metamask
 Moralis.onAccountChanged(async (_account) => {
   console.log("account swap");
-  const confirmed = confirm("Link this address to your account?");
-  if (confirmed) {
-    // let user = Moralis.User.current();
-    // let _accounts = await user.get("accounts");
-
+  if (confirm("Link this address to your account?")) {
     try {
+      // link account in Moralis DB
       await Moralis.link(_account);
       console.log("linked", _account);
+      // refresh with new accounts
       await run(ethers.utils.getAddress(_account));
     } catch (error) {
       console.log("Linking address failed");
     }
   } else {
-    /// new user
+    // new user
     await Moralis.User.logOut();
     loggedIn = false;
     try {
@@ -761,54 +744,9 @@ Moralis.onAccountChanged(async (_account) => {
       await run("");
     }
   }
-  /**
-   *
-   *
-   *
-   *
-   */
-  // if (
-  //   confirm(
-  //     "Select confirm to link this address to your account, select cancel to create a new user"
-  //   )
-  // ) {
-  //   let user = Moralis.User.current();
-  //   let has = await user.get("accounts"); // all linked accounts from user
-  //   /// is this address already linked
-  //   for (let i = 0; i < has.length; i++) {
-  //     if (ethers.utils.getAddress(has[i]) == _account) {
-  //       alert("Link Failed.\nThis address is already linked");
-  //       return;
-  //     }
-  //   }
-  //   try {
-  //     await Moralis.link(_account);
-  //     console.log("linked " + _account);
-  //     signedIn = true;
-  //     account = _account;
-  //     await run(_account);
-  //   } catch (error) {
-  //     signedIn = false;
-  //     account = "";
-  //     alert("Link Failed.\nThis address may already have an account with us");
-  //     await run("");
-  //   }
-  // } else {
-  //   await Moralis.User.logOut();
-  //   signedIn = false;
-  //   let k = await authenticate();
-  //   if (k[0]) {
-  //     loggedIn = true;
-  //     run(k[1]);
-  //   } else {
-  //     run("");
-  //   }
-  // }
 });
 
-/**
- * Log in button
- */
+/// Login button
 var loggedIn = false;
 document.getElementById("login-btn").addEventListener("click", async () => {
   if (!loggedIn) {
@@ -826,93 +764,21 @@ document.getElementById("login-btn").addEventListener("click", async () => {
   }
 });
 
-// async function signUser() {}
-
-// auth should return [status, addr signed in checksummed]
-
-/**
- * Log out button
- */
-// async function signOutUser() {
-//   if (loggedIn && confirm("Sign out?")) {
-//     console.log("signed out user", Moralis.User.current(), account);
-//     // cId = "0x1";
-//     loggedIn = false;
-//     // account = "";
-//     // web3 = new Web3(networks[cId].node);
-//     // provider = new ethers.providers.JsonRpcProvider(networks[cId].node);
-//     await Moralis.User.logOut();
-//     await run("");
-//   }
-// }
-/**
- * Link account button
- * If a user switches accounts without loggin out,
- * they may click this btn and add the new account to their accounts list
- */
-async function linkUser() {
-  if (!loggedIn) {
-    alert("You must be logged in to add an account");
-    return;
-  } else {
-    if (window.ethereum) {
-      /// reset session vars
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      account = ethers.utils.getAddress(
-        (await provider.send("eth_requestAccounts", []))[0]
-      );
-
-      let user = Moralis.User.current(); // current user
-      let has = await user.get("accounts"); // all linked accounts from user
-      /// is this address already linked
-      for (let i = 0; i < has.length; i++) {
-        if (ethers.utils.getAddress(has[i]) == account) {
-          alert("Link Failed.\nThis address is already linked");
-          return;
-        }
-      }
-
-      if (confirm("Add " + account + " to your accounts?")) {
-        try {
-          await Moralis.link(account);
-          console.log("linked " + account);
-          await run(account);
-        } catch (error) {
-          alert(
-            "Link Failed.\nThis address may already have an account with us"
-          );
-        }
-      } else {
-        console.log("rejected linking");
-        return;
-      }
-    }
-  }
-}
-
-/**
- * Unlink account button
- * Unlinks accounts from user's list of accounts
- */
+/// Function to unlink an account from the user's list of accounts
 async function unlink(_account) {
   if (confirm("Remove " + _account + "from your account list?")) {
     await Moralis.unlink(_account);
     console.log(_account + " removed from account list");
     await run(ethers.utils.getAddress(Moralis.account));
-  } else {
-    return;
   }
 }
 
-/**
- * Gets the current user or asks the user to sign a message to authenticate
- * @returns If the authentication was successful
- */
+/// Gets current user by cache or message signing
+/// Returns [auth status, account]
 async function authenticate() {
   let user = Moralis.User.current();
-
   if (!user) {
-    // request to use in a user's wallet
+    // sign-in message
     let authRequest = {
       signingMessage: "Sign this message to log in",
       chain: "0x1",
@@ -935,9 +801,7 @@ async function authenticate() {
   return [true, ethers.utils.getAddress(Moralis.account)];
 }
 
-/**
- * Function to add a network to user's (mm only) wallet if not already
- */
+/// Function to add a network to user's (mm only) wallet if not already
 async function addNetwork(_cId) {
   if (window.ethereum) {
     try {
@@ -961,10 +825,13 @@ async function addNetwork(_cId) {
   }
 }
 
-/**
- * App function that runs each refresh
- */
+/// App function that runs each refresh
 async function run(_account) {
+  if (_account != "") {
+    document.getElementById("login-btn").innerText = shrinkAddr(_account);
+  } else {
+    document.getElementById("login-btn").innerText = "Connect Wallet";
+  }
   await setPortfolio(_account);
   console.log("session finished");
 }
