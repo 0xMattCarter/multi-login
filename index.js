@@ -731,83 +731,120 @@ const params = {
   ],
 };
 
-/**
- * Main session vars
- */
-var cId = "0x1"; // default chain from selector (may not hav)
-var web3 = new Web3(networks[cId].node); // web3.js object, ethers object is already present from cdn
-var account = ""; // current address connected (checksum)
-var loggedIn = false; // if there is a user logged in currently
-var provider = new ethers.providers.JsonRpcProvider(networks[cId].node); // web3 provider
+Moralis.onAccountChanged(async (_account) => {
+  console.log("account swap");
+  const confirmed = confirm("Link this address to your account?");
+  if (confirmed) {
+    // let user = Moralis.User.current();
+    // let _accounts = await user.get("accounts");
 
-Moralis.Web3.onAccountChanged(async function (_account) {
-  /// ask if this is new account or same account
-  /// if same, do link, if not, re log in
-  console.log("mm swap");
-  if (
-    confirm(
-      "Select confirm to link this address to your account, select cancel to create a new User"
-    )
-  ) {
-    let user = Moralis.User.current();
-    let has = await user.get("accounts"); // all linked accounts from user
-    /// is this address already linked
-    for (let i = 0; i < has.length; i++) {
-      if (ethers.utils.getAddress(has[i]) == _account) {
-        alert("Link Failed.\nThis address is already linked");
-        return;
-      }
-    }
     try {
       await Moralis.link(_account);
-      console.log("linked " + _account);
-      signedIn = true;
-      account = _account;
-      await run(_account);
+      console.log("linked", _account);
+      await run(ethers.utils.getAddress(_account));
     } catch (error) {
-      signedIn = false;
-      account = "";
-      alert("Link Failed.\nThis address may already have an account with us");
-      await run("");
+      console.log("Linking address failed");
     }
   } else {
+    /// new user
     await Moralis.User.logOut();
-    signedIn = false;
-    let k = await authenticate();
-    if (k[0]) {
-      loggedIn = true;
-      run(k[1]);
-    } else {
-      run("");
+    loggedIn = false;
+    try {
+      let k = await authenticate();
+      if (k[0]) {
+        loggedIn = true;
+        await run(ethers.utils.getAddress(_account));
+        console.log("check", Moralis.account, _account);
+      }
+    } catch (error) {
+      console.log("Failed to sign login message");
+      await run("");
     }
   }
+  /**
+   *
+   *
+   *
+   *
+   */
+  // if (
+  //   confirm(
+  //     "Select confirm to link this address to your account, select cancel to create a new user"
+  //   )
+  // ) {
+  //   let user = Moralis.User.current();
+  //   let has = await user.get("accounts"); // all linked accounts from user
+  //   /// is this address already linked
+  //   for (let i = 0; i < has.length; i++) {
+  //     if (ethers.utils.getAddress(has[i]) == _account) {
+  //       alert("Link Failed.\nThis address is already linked");
+  //       return;
+  //     }
+  //   }
+  //   try {
+  //     await Moralis.link(_account);
+  //     console.log("linked " + _account);
+  //     signedIn = true;
+  //     account = _account;
+  //     await run(_account);
+  //   } catch (error) {
+  //     signedIn = false;
+  //     account = "";
+  //     alert("Link Failed.\nThis address may already have an account with us");
+  //     await run("");
+  //   }
+  // } else {
+  //   await Moralis.User.logOut();
+  //   signedIn = false;
+  //   let k = await authenticate();
+  //   if (k[0]) {
+  //     loggedIn = true;
+  //     run(k[1]);
+  //   } else {
+  //     run("");
+  //   }
+  // }
 });
+
 /**
  * Log in button
  */
-async function signInUser() {
+var loggedIn = false;
+document.getElementById("login-btn").addEventListener("click", async () => {
   if (!loggedIn) {
     let k = await authenticate();
     if (k[0]) {
+      loggedIn = true;
       await run(k[1]);
     }
+  } else {
+    if (confirm("Log out?")) {
+      await Moralis.User.logOut();
+      loggedIn = false;
+      await run("");
+    }
   }
-}
+});
+
+// async function signUser() {}
+
+// auth should return [status, addr signed in checksummed]
+
 /**
  * Log out button
  */
-async function signOutUser() {
-  if (loggedIn && confirm("Sign out?")) {
-    console.log("signed out user", Moralis.User.current(), account);
-    // cId = "0x1";
-    loggedIn = false;
-    // account = "";
-    // web3 = new Web3(networks[cId].node);
-    // provider = new ethers.providers.JsonRpcProvider(networks[cId].node);
-    await Moralis.User.logOut();
-    await run("");
-  }
-}
+// async function signOutUser() {
+//   if (loggedIn && confirm("Sign out?")) {
+//     console.log("signed out user", Moralis.User.current(), account);
+//     // cId = "0x1";
+//     loggedIn = false;
+//     // account = "";
+//     // web3 = new Web3(networks[cId].node);
+//     // provider = new ethers.providers.JsonRpcProvider(networks[cId].node);
+//     await Moralis.User.logOut();
+//     await run("");
+//   }
+// }
 /**
  * Link account button
  * If a user switches accounts without loggin out,
@@ -872,81 +909,46 @@ async function unlink(_account) {
  * @returns If the authentication was successful
  */
 async function authenticate() {
-  var wc = true;
-  var user;
+  let user = Moralis.User.current();
 
-  /// undo this when fixing wc
-  wc = false;
-  // if (window.ethereum) {
-  //   wc = !confirm("Use your MetaMask wallet ?");
-  // } else {
-  //   wc = true;
-  // }
-
-  /// Sign log in message using wallet connect
-  if (wc) {
+  if (!user) {
+    // request to use in a user's wallet
+    let authRequest = {
+      signingMessage: "Sign this message to log in",
+      chain: "0x1",
+    };
+    // use wallet connect ?
+    if (window.ethereum) {
+      if (!confirm("Use your metamask wallet?")) {
+        authRequest.provider = "walletconnect";
+      }
+    }
     try {
-      user = await Moralis.authenticate({
-        signingMessage: "Sign this transaction to verify key ownership",
-        provider: "walletconnect",
-      });
-      await Moralis.enableWeb3({ provider: "walletconnect" });
-    } catch (error) {
-      console.log("failed to sign log in message");
+      user = await Moralis.authenticate(authRequest);
+    } catch (e) {
+      console.log("Failed to sign log in message");
       return [false, ""];
     }
   }
-  /// Sign log in message using metamask
-  else {
-    user = Moralis.User.current();
-    /// If user remembered
-    if (user) {
-      await Moralis.enableWeb3();
-    }
-    /// If no remembered user
-    else {
-      try {
-        user = await Moralis.authenticate({
-          signingMessage: "Sign this transaction to verify key ownership",
-        });
-        await Moralis.enableWeb3();
-      } catch (error) {
-        console.log("failed to sign log in message");
-        return [false, ""];
-      }
-    }
-  }
-  /// Log in message signed successfully
-  web3 = new Web3(networks[cId].node); // web3.js object
-  account = ethers.utils.getAddress(Moralis.account); // checksummed eth address
-  provider = new ethers.providers.JsonRpcProvider(networks[cId].node); // web3 provider
-  loggedIn = true; // there is a user logged in now
-  console.log("signed in user", user, account);
-  return [true, account];
+  await Moralis.enableWeb3();
+  console.log("signed in user", user, Moralis.account);
+  return [true, ethers.utils.getAddress(Moralis.account)];
 }
 
 /**
- * Adds a network to a user's mm wallet if they do not have it already
- * @param {} _cId string of hex code chain Id ("0x1")
- * @returns if network adding was successful
+ * Function to add a network to user's (mm only) wallet if not already
  */
 async function addNetwork(_cId) {
-  /// only works for mm
   if (window.ethereum) {
     try {
-      let chainName = networks[_cId].name;
-      let currencyName = networks[_cId].token;
-      let currencySymbol = networks[_cId].token;
-      let rpc = networks[_cId].rpc;
-      let blockExplorer = networks[_cId].blockExplorer;
-      /// add network to user's wallet
+      let ntk = networks[_cId];
       await Moralis.addNetwork(
         _cId,
-        chainName,
-        currencyName,
-        currencySymbol,
-        rpc,
-        blockExplorer
+        ntk.name,
+        ntk.token,
+        ntk.token,
+        ntk.rpc,
+        ntk.blockExplorer
       );
       /// switch to network if Moralis.addnetork() doesnt already
       await Moralis.switchNetwork(_cId);
@@ -959,76 +961,18 @@ async function addNetwork(_cId) {
   }
 }
 
-// use this to add networks to user's wallets
-// async function addNetworkForUser(chainId) {
-//   try {
-//     await ethereum.request({
-//       method: "wallet_switchEthereumChain",
-//       params: [{ chainId: chainId }], // Hexadecimal version of 80001, prefixed with 0x
-//     });
-//   } catch (error) {
-//     if (error.code === 4902) {
-//       try {
-//         await ethereum.request({
-//           method: "wallet_addEthereumChain",
-//           params: [
-//             {
-//               chainId: chainId, // Hexadecimal version of 80001, prefixed with 0x
-//               chainName: networks[chainId].chainName,
-//               nativeCurrency: {
-//                 name: networks[chainId].name,
-//                 symbol: networks[chainId].symbol,
-//                 decimals: networks[chainId].decimals,
-//               },
-//               rpcUrls: [networks[chainId].rpc],
-//               blockExplorerUrls: [networks[chainId].blockExplorer],
-//               iconUrls: [""],
-//             },
-//           ],
-//         });
-//       } catch (addError) {
-//         console.log("Did not add network");
-//       }
-//     }
-//   }
-// }
-
-// /**
-//  * Called when the selector changes networks
-//  * NOTE: May remove this or only use onNetworkChange
-//  */
-// async function swapNetwork() {
-//   if (loggedIn) {
-//     let n = document.getElementsByClassName("network-selector")[0];
-//     let chainId = n.options[n.selectedIndex].value;
-//     console.log("setting default network to chainId " + chainId);
-//     try {
-//       if (chainId == "0x1") {
-//         await Moralis.switchNetwork("0x1");
-//       } else {
-//         await addNetwork(chainId);
-//       }
-//       await Moralis.enableWeb3();
-
-//       cId = chainId;
-//       web3 = new Web3(networks[cId].node);
-//       provider = new ethers.providers.JsonRpcProvider(networks[cId].node);
-//       await run(Moralis.);
-//     } catch (error) {
-//       console.log("Failed to switch networks");
-//     }
-//   }
-// }
-
 /**
- * App function that runs each refresh/login/logout/etc
+ * App function that runs each refresh
  */
 async function run(_account) {
   await setPortfolio(_account);
   console.log("session finished");
 }
 
-// example of contract write
+/**
+ * CONTRACT WRITE EXAMPLES
+ */
+
 // async function mint(amount) {
 //   var price, cost, writer;
 //   if (!signer) {
@@ -1084,8 +1028,4 @@ async function run(_account) {
 //   let write = nftContract.connect(signer);
 //   let tx = await write.mintAccessToken(amount, { value: cost });
 //   console.log(cost, cost.toString(), tx, "rec", tx.hash);
-// }
-
-// if (window.ethereum) {
-//   provider = new ethers.providers.Web3Provider(window.ethereum);
 // }
