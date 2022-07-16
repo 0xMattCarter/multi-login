@@ -1,3 +1,7 @@
+body {
+  padding: 1rem;
+}
+
 .linked {
   display: grid;
   grid-template-columns: 3fr 1fr;
@@ -19,4 +23,105 @@
 
 #checker {
   visibility: hidden;
+}
+
+.background-color {
+  background-color: #48a6a9;
+  color: black;
+  width: 500px;
+}
+
+.token-stat {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+#login-btn {
+  margin-bottom: 1rem;
+}
+
+.user-section {
+  font-size: 25px;
+  padding: 1rem;
+}
+
+.network-stats-section {
+  font-size: 20px;
+  padding: 1rem;
+  margin-block: 1rem;
+}
+
+.email-section {
+  padding: 1rem;
+  margin-block: 1rem;
+}
+
+#linked-accounts-section {
+  /* background-color: ; */
+  width: 350px;
+  display: grid;
+  gap: 1rem;
+}
+
+.link {
+  /* width: 500px; */
+  /* text-align: right; */
+  /* padding-left: auto; */
+  /* margin-left: auto; */
+  background-color: #48a6a977;
+  /* margin-block: 0.5rem; */
+  padding: 0.5rem;
+  display: grid;
+  grid-template-columns: auto auto;
+}
+
+.unlink-btn {
+  margin-left: auto;
+  width: 100px;
+}
+
+.selectors-section {
+  margin-block: 1rem;
+}
+
+.background-color1 {
+  background-color: #48a6a977;
+  color: black;
+  width: 500px;
+}
+
+#erc20s-section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.erc20 {
+  padding: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+#erc721s-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+#erc1155s-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.erc721 {
+  padding: 1rem;
+  max-width: 100px;
+}
+
+.nft-image {
+  width: 100px;
+}
+
+a {
+  color: black;
 }
