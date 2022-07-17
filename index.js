@@ -1,7 +1,7 @@
 /// Starts Moralis server
 Moralis.start({
-  serverUrl: "https://okritavfr1iq.usemoralis.com:2053/server",
-  appId: "ybVUg3QvLuNe3lDSEdlkbj0tupQAJq1ivE5uJdCD",
+  serverUrl: "https://pz3ac4aydbjr.usemoralis.com:2053/server",
+  appId: "gcyGZTHHUSMv4th0e3mmky6eLcVrGCuXnvWPx2aO",
 });
 /// All information for adding networks
 /// ethereum, binance, polygon, arbitrum, avalanche, fantom, cronos
@@ -827,39 +827,23 @@ const params = {
 /// When user changes account in metamask
 Moralis.onAccountChanged(async (_account) => {
   console.log("account swap");
-  if (confirm("Link this address to your account?")) {
-    try {
-      // link account in Moralis DB
-      await Moralis.link(_account);
-      await Moralis.enableWeb3();
-      console.log("linked", _account);
-      // refresh with new accounts
-      // look into changing account-selector from here
-      await setUserStats(Morali.User.current());
-      await run();
-    } catch (error) {
-      console.log("Linking address failed", error);
-    }
-  } else {
-    // new user
-    await Moralis.User.logOut();
-    loggedIn = false;
-    try {
-      let k = await authenticate();
-      if (k[0]) {
-        loggedIn = true;
-        // look into changing account-selector from here
-        await run();
-        console.log(
-          "check",
-          ethers.utils.getAddress(user.get("ethAddress")),
-          _account
-        );
-      }
-    } catch (error) {
-      console.log("Failed to sign login message");
-      await run();
-    }
+  /// Normalize to checksum
+  _account = ethers.utils.getAddress(_account);
+  let accounts = await getUserAccounts(Moralis.User.current());
+  // console.log(accounts);
+  document.getElementById("possible-link").innerHTML = "";
+  if (!accounts.includes(_account)) {
+    let el = document.createElement("div"),
+      addr = document.createElement("div"),
+      btn = document.createElement("button");
+    addr.innerText = shrinkAddr(_account);
+    btn.innerText = "add";
+    el.classList.add("link-special"), btn.classList.add("link-btn-special");
+    btn.onclick = () => {
+      link(_account);
+    };
+    el.appendChild(addr), el.appendChild(btn);
+    document.getElementById("possible-link").appendChild(el);
   }
 });
 
@@ -876,6 +860,7 @@ document.getElementById("login-btn").addEventListener("click", async () => {
     if (confirm("Log out?")) {
       await Moralis.User.logOut();
       loggedIn = false;
+      await setUserStats(null);
       await run();
     }
   }
@@ -959,7 +944,7 @@ async function run() {
   } else {
     document.getElementById("login-btn").innerText = "Connect Wallet";
   }
-
+  console.log("running", accounts, chainId);
   await setNetworkStats(accounts, chainId);
   await setTokens(accounts, chainId);
 

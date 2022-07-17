@@ -22,7 +22,6 @@
       <input id="username-input" placeholder="change username" />
       <button id="submit-username">Change</button>
       <div id="user-id"></div>
-      <div id="network-bal"></div>
     </div>
     <div class="network-stats-section background-color">
       <div id="network"></div>
@@ -35,6 +34,12 @@
       <button id="submit-email">Submit</button>
     </div>
     <h2>LINKED ADDRESSES</h2>
+    <div id="possible-link">
+      <!-- <div class="link-special">
+        <div>0x1234...3333</div>
+        <button class="link-btn-special">add</button>
+      </div> -->
+    </div>
     <div id="linked-accounts-section">
       <!-- <div class="link">
         <div>0x1234...3333</div>
@@ -56,7 +61,7 @@
         <option value="0xa86a">Avalance</option>
         <option value="0xfa">Fantom</option>
         <option value="0x19">Cronos</option>
-        <option value="0x0">Muli-Chain</option>
+        <option value="0x0">Multi-Chain</option>
       </select>
       <select
         id="account-selector"
@@ -69,15 +74,23 @@
       </select>
     </div>
     <h2>TOKENS</h2>
-    <h3>erc20</h3>
+    <div class="network-balance erc20 background-color1">
+      <div id="base-name"></div>
+      <div id="base-bal"></div>
+    </div>
     <div id="erc20s-section">
       <!-- <div class="erc20 background-color1">
         <div>SYM1</div>
         <div>BAL1</div>
       </div> -->
     </div>
+    <div id="total-erc20s" , class="erc20-t background-color1">
+      <div id="tt1">Summary</div>
+      <div id="tt2"></div>
+      <div id="tt3"></div>
+    </div>
     <h2>NFTS</h2>
-    <h3>erc721</h3>
+    <h3>erc721s</h3>
     <div id="erc721s-section">
       <!-- <div class="erc721 background-color1">
         <img class="nft-image" src="images/bayc.png" alt="bayc image" />
@@ -86,7 +99,7 @@
         <div>Address</div>
       </div> -->
     </div>
-    <h3>erc1155</h3>
+    <h3>erc1155s</h3>
     <div id="erc1155s-section">
       <!-- <div class="erc721 background-color1">
         <img class="nft-image" src="images/bayc.png" alt="bayc image" />
@@ -96,31 +109,9 @@
         <div>Address</div>
       </div> -->
     </div>
-    <!-- <div id="checker">
-      <h1 id="wallet2">User Id: -</h1>
-
-      <h1 id="current-email">Current Email:</h1>
-      <input id="email-input" type="email" placeholder="update email address" />
-      <button id="submit-email">Submit</button>
-      <h1>Linked Wallets</h1>
-      <div id="linked-wallets"></div>
-      <div class="token-stat">
-        <div class="sym">Token</div>
-        <div class="single-bal">Primary Balance</div>
-        <div class="mult-bal">Total Balances</div>
-      </div>
-      <div id="my-erc20s">
-        <div class="token-stat">
-          <div class="sym">SYM</div>
-          <div class="single-bal">0.0</div>
-          <div class="mult-bal">0.0</div>
-        </div>
-      </div>
-      <div id="nets"></div>
-    </div> -->
 
     <script src="index.js" type="text/javascript"></script>
-    <script src="js/helpers.js" type="text/javascript"></script>
+    <script src="js/utils.js" type="text/javascript"></script>
     <script src="js/tokens.js" type="text/javascript"></script>
     <script src="js/networks.js" type="text/javascript"></script>
     <script src="js/users.js" type="text/javascript"></script>
