@@ -76,7 +76,9 @@ unlink = async (_account, _user) => {
   if (confirm("Remove " + _account + " from your account list?")) {
     await Moralis.unlink(_account);
     console.log(_account + " removed from account list");
+    await setUserStats(Moralis.User.current());
     await run();
+    // set network stats again
   }
 };
 
@@ -138,37 +140,47 @@ setUserStats = async (_user) => {
   document.getElementById("linked-accounts-section").innerHTML = "";
   /// Wipe linked accounts selector choices
   document.getElementById("account-selector").innerHTML = "";
+  let links = stats[3];
+  if (Moralis.User.current()) {
+  }
   /// Adds default address to selector options, but skips in for loop
   /// this is to skip adding the default addr to the linked addr section
-  if (stats[3][0] != undefined) {
+  if (links[0] != undefined) {
+    /// Reorder links to have the default address first
+    let def = ethers.utils.getAddress(Moralis.account);
+    let ind = links.indexOf(def);
+    let copy = links[0];
+    links[ind] = copy;
+    links[0] = def;
+    /// Create html
     let optB = document.createElement("option");
-    optB.value = stats[3][0];
-    optB.innerText = shrinkAddr(stats[3][0]);
+    optB.value = links[0];
+    optB.innerText = shrinkAddr(links[0]);
     document.getElementById("account-selector").appendChild(optB);
   }
-  for (let i = 1; i < stats[3].length; i++) {
+  for (let i = 1; i < links.length; i++) {
     /// Draw each linked account
     let el = document.createElement("div"),
       addr = document.createElement("div"),
       btn = document.createElement("button");
-    addr.innerText = shrinkAddr(stats[3][i]);
+    addr.innerText = shrinkAddr(links[i]);
     btn.innerText = "remove";
     el.classList.add("link"), btn.classList.add("unlink-btn");
     btn.onclick = () => {
-      unlink(stats[3][i], _user);
+      unlink(links[i], _user);
     };
     el.appendChild(addr), el.appendChild(btn);
     document.getElementById("linked-accounts-section").appendChild(el);
     /// Draw each linked account selector
     let opt = document.createElement("option");
-    opt.value = stats[3][i];
-    opt.innerText = shrinkAddr(stats[3][i]);
+    opt.value = links[i];
+    opt.innerText = shrinkAddr(links[i]);
     document.getElementById("account-selector").appendChild(opt);
   }
   /// Draw "All" option for account selector choices
   let optA = document.createElement("option");
   optA.value = "all";
-  optA.innerText = "All Accounts";
+  optA.innerText = "All";
   document.getElementById("account-selector").appendChild(optA);
   /// Set submit buttons when theres a user
   if (_user) {

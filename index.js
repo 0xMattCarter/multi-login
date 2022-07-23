@@ -18,6 +18,8 @@ var networks = {
     node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/eth/mainnet",
     rpc: "https://mainnet.infura.io/v3/",
     blockExplorer: "https://etherscan.io/",
+    gecko: "ethereum",
+    gecko2: "ethereum",
   },
   "0x38": {
     token: "BNB",
@@ -25,6 +27,8 @@ var networks = {
     node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/bsc/mainnet",
     rpc: " https://bsc-dataseed.binance.org/",
     blockExplorer: "https://bscscan.com/",
+    gecko: "binance-smart-chain",
+    gecko2: "binancecoin",
   },
   "0x89": {
     token: "MATIC",
@@ -32,35 +36,39 @@ var networks = {
     node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/polygon/mainnet",
     rpc: "https://polygon-rpc.com",
     blockExplorer: "https://polygonscan.com/",
+    gecko: "polygon-pos",
+    gecko2: "matic-network",
   },
-  "0xa4b1": {
-    token: "ETH",
-    name: "Arbitrum",
-    node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/arbitrum/mainnet",
-    rpc: "https://arb1.arbitrum.io/rpc",
-    blockExplorer: "https://arbiscan.io/",
-  },
+  // "0xa4b1": {
+  //   token: "ETH",
+  //   name: "Arbitrum",
+  //   node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/arbitrum/mainnet",
+  //   rpc: "https://arb1.arbitrum.io/rpc",
+  //   blockExplorer: "https://arbiscan.io/",
+  // },
   "0xa86a": {
     token: "AVAX",
     name: "Avalanche",
     node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/avalanche/mainnet",
     rpc: "https://api.avax.network/ext/bc/C/rpc",
     blockExplorer: "https://snowtrace.io/",
+    gecko: "avalance",
+    gecko2: "avalanche-2",
   },
-  "0xfa": {
-    token: "FTM",
-    name: "Fantom",
-    node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/fantom/mainnet",
-    rpc: "https://rpc.ftm.tools",
-    blockExplorer: "https://ftmscan.com/",
-  },
-  "0x19": {
-    token: "CRO",
-    name: "Cronos",
-    node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/cronos/mainnet",
-    rpc: "https://evm.cronos.org",
-    blockExplorer: "https://cronoscan.com/",
-  },
+  // "0xfa": {
+  //   token: "FTM",
+  //   name: "Fantom",
+  //   node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/fantom/mainnet",
+  //   rpc: "https://rpc.ftm.tools",
+  //   blockExplorer: "https://ftmscan.com/",
+  // },
+  // "0x19": {
+  //   token: "CRO",
+  //   name: "Cronos",
+  //   node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/cronos/mainnet",
+  //   rpc: "https://evm.cronos.org",
+  //   blockExplorer: "https://cronoscan.com/",
+  // },
 };
 /// All ethers.js rpc providers
 /// eth, bnb, matic, arb, avax, fant, cro
@@ -68,10 +76,10 @@ var providers = {
   "0x1": new ethers.providers.JsonRpcProvider(networks["0x1"].node),
   "0x38": new ethers.providers.JsonRpcProvider(networks["0x38"].node),
   "0x89": new ethers.providers.JsonRpcProvider(networks["0x89"].node),
-  "0xa4b1": new ethers.providers.JsonRpcProvider(networks["0xa4b1"].node),
+  // "0xa4b1": new ethers.providers.JsonRpcProvider(networks["0xa4b1"].node),
   "0xa86a": new ethers.providers.JsonRpcProvider(networks["0xa86a"].node),
-  "0xfa": new ethers.providers.JsonRpcProvider(networks["0xfa"].node),
-  "0x19": new ethers.providers.JsonRpcProvider(networks["0x19"].node),
+  // "0xfa": new ethers.providers.JsonRpcProvider(networks["0xfa"].node),
+  // "0x19": new ethers.providers.JsonRpcProvider(networks["0x19"].node),
 };
 /// All web3.js objects
 /// eth, bnb, matic, arb, avax, fant, cro
@@ -79,10 +87,10 @@ var web3js = {
   eth: new Web3(networks["0x1"].node),
   bnb: new Web3(networks["0x38"].node),
   matic: new Web3(networks["0x89"].node),
-  arb: new Web3(networks["0xa4b1"].node),
+  // arb: new Web3(networks["0xa4b1"].node),
   avax: new Web3(networks["0xa86a"].node),
-  fant: new Web3(networks["0xfa"].node),
-  cro: new Web3(networks["0x19"].node),
+  // fant: new Web3(networks["0xfa"].node),
+  // cro: new Web3(networks["0x19"].node),
 };
 /// ABIs, address', etc
 /// NOTE: current values are not used
@@ -896,7 +904,7 @@ async function authenticate() {
     user,
     ethers.utils.getAddress(user.get("ethAddress"))
   );
-  return [true, ethers.utils.getAddress(user.get("ethAddress"))];
+  return [true, ethers.utils.getAddress(Moralis.account)];
 }
 
 /// Function to add a network to user's (mm only) wallet if not already
@@ -927,10 +935,12 @@ async function addNetwork(_cId) {
 async function run() {
   let user = Moralis.User.current();
   let accounts = await getUserAccounts(user);
-  let chainId = ["0x1", "0x38", "0x89", "0xa86a", "0xfa", "0x19"]; // default multichain arb taken out of this list for some reason
+  let chainId = ["0x1", "0x38", "0x89", "0xa86a"]; // default multichain arb taken out of this list for some reason
   /// Change login btn text
   if (loggedIn) {
-    document.getElementById("login-btn").innerText = shrinkAddr(accounts[0]);
+    document.getElementById("login-btn").innerText = shrinkAddr(
+      Moralis.account
+    );
     /// Which chain(s) ?
     let chainSel = document.getElementById("chain-selector").value;
     if (chainSel != "0x0") {
@@ -944,7 +954,7 @@ async function run() {
   } else {
     document.getElementById("login-btn").innerText = "Connect Wallet";
   }
-  console.log("running", accounts, chainId);
+  // console.log("running", accounts, chainId);
   await setNetworkStats(accounts, chainId);
   await setTokens(accounts, chainId);
 

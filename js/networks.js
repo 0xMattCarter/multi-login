@@ -60,14 +60,11 @@ setNetworkStats = async (_accounts, _chainIds) => {
     document.getElementById("gas").innerText = "";
     document.getElementById("block").innerText = "";
     document.getElementById("network").innerText = "";
-    document.getElementById("network-bal").innerText = "";
   }
   /// Multi-Chain viewing, logged in
   else {
     document.getElementById("gas").innerText = "Gas: ~ xyz gwei";
     document.getElementById("block").innerText = "Block: 1234567";
     document.getElementById("network").innerText = "Network: Multi Chain";
-    document.getElementById("network-bal").innerText =
-      "Balance: figure this out";
   }
 };

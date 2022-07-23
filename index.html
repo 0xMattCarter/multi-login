@@ -59,9 +59,7 @@
         <option value="0x89">Polygon</option>
         <!-- <option value="0xa4b1">Arbitrum</option> -->
         <option value="0xa86a">Avalance</option>
-        <option value="0xfa">Fantom</option>
-        <option value="0x19">Cronos</option>
-        <option value="0x0">Multi-Chain</option>
+        <option value="0x0">All</option>
       </select>
       <select
         id="account-selector"
@@ -70,7 +68,17 @@
         ,
         onchange="run()"
       >
-        <option value="all">All Accounts</option>
+        <option value="all">All</option>
+      </select>
+      <select
+        id="currency-selector"
+        data-name="Field"
+        class="currency-selector"
+        ,
+        onchange="run()"
+      >
+        <option value="default">Default</option>
+        <option value="usd">USD</option>
       </select>
     </div>
     <h2>TOKENS</h2>

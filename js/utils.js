@@ -30,3 +30,40 @@ shrinkAddr = (_addr) => {
 getContractInstance = (_addr, _abi, _chainId) => {
   return new ethers.Contract(_addr, _abi, providers[_chainId]);
 };
+
+/**
+ * Function to get tokenomics for a coin from coin gecko
+ * _chainId is the chainId the coin belongs to
+ * _tokenAddr is the coin's contract address
+ */
+coinGeckoGetTokenomics = async (_chainId, _tokenAddr) => {
+  let string =
+    "https://api.coingecko.com/api/v3/coins/" +
+    networks[_chainId].gecko +
+    "/contract/" +
+    _tokenAddr +
+    "/market_chart/?vs_currency=usd&days=0";
+  let resp = await fetch(string);
+  let jsn = resp.json();
+  return jsn;
+  // await fetch(string)
+  //   .then((resp) => resp.json())
+  //   .then((data) => () {
+  //     return data
+  //   });
+};
+
+coinGeckoGetTokenomics2 = async (_chainId) => {
+  let string =
+    "https://api.coingecko.com/api/v3/simple/price?ids=" +
+    networks[_chainId].gecko2 +
+    "&vs_currencies=usd";
+  let resp = await fetch(string);
+  let jsn = resp.json();
+  return jsn;
+  // await fetch(string)
+  //   .then((resp) => resp.json())
+  //   .then((data) => () {
+  //     return data
+  //   });
+};
