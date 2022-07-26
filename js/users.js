@@ -70,6 +70,47 @@ getUserAccounts = async (_user) => {
 };
 
 /**
+ * Adds a contract address to a user's hidden list
+ * Erc20s and Erc1155s
+ */
+
+hideContract = async (_address) => {
+  ///
+  if (confirm("Hide tokens from this contract address?\n" + _address)) {
+    let user = Moralis.User.current();
+    let hidden = await user.get("hidden_tokens");
+    if (hidden == undefined) {
+      // no hides yet
+      hidden = [];
+    }
+    hidden.push(_address);
+    await user.set("hidden_tokens", hidden);
+    await user.save();
+    await run();
+  }
+};
+
+unhideContract = async (_address) => {
+  if (confirm("Un-hide tokens from this contract address?\n" + _address)) {
+    let user = Moralis.User.current();
+    let hidden = await user.get("hidden_tokens");
+    try {
+      let i = hidden.indexOf(_address);
+      console.log(i, hidden);
+      hidden.splice(i, 1);
+      console.log(i, hidden);
+      await user.set("hidden_tokens", hidden);
+      await user.save();
+      await run();
+    } catch (error) {
+      console.log(
+        "failed to unhide this contract, are you sure it is already hidden"
+      );
+    }
+  }
+};
+
+/**
  * Function to remove _accounts from _user's account list
  */
 unlink = async (_account, _user) => {
@@ -91,7 +132,6 @@ link = async (_account) => {
       await Moralis.link(_account);
       await Moralis.enableWeb3();
       document.getElementById("possible-link").innerHTML = "";
-      await setUserStats(Moralis.User.current());
       await run();
     } catch (error) {
       alert(
@@ -102,6 +142,7 @@ link = async (_account) => {
     }
 
     console.log(_account + " added to account list");
+    await setUserStats(Moralis.User.current());
     await run();
   }
 };

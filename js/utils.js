@@ -1,6 +1,4 @@
-/**
- *  Function to convert decimal tokenId -> hex 1155 json format (64 padded)
- */
+/// Converts decimal tokenId -> hex 1155 json format (64 padded 0s)
 function tokenToJson(tokenId) {
   let dec = ethers.BigNumber.from(tokenId);
   let hex = dec.toHexString();
@@ -13,9 +11,7 @@ function tokenToJson(tokenId) {
   return padded;
 }
 
-/**
- * Shrinks address to 0xabcd...1234 format
- */
+/// Shrinks address to 0xabcd...1234 format
 shrinkAddr = (_addr) => {
   return (
     _addr.substring(0, 6) +
@@ -24,15 +20,13 @@ shrinkAddr = (_addr) => {
   );
 };
 
-/**
- * Function to get contract instances (ethers.js)
- */
+/// Returns ethers.js contract instances
 getContractInstance = (_addr, _abi, _chainId) => {
   return new ethers.Contract(_addr, _abi, providers[_chainId]);
 };
 
 /**
- * Function to get tokenomics for a coin from coin gecko
+ * Gets tokenomics for an erc20 token from coin gecko
  * _chainId is the chainId the coin belongs to
  * _tokenAddr is the coin's contract address
  */
@@ -46,13 +40,11 @@ coinGeckoGetTokenomics = async (_chainId, _tokenAddr) => {
   let resp = await fetch(string);
   let jsn = resp.json();
   return jsn;
-  // await fetch(string)
-  //   .then((resp) => resp.json())
-  //   .then((data) => () {
-  //     return data
-  //   });
 };
-
+/**
+ * Gets tokenomics for a network's token (eth, bnb, matic, avax) from coin gecko
+ * _chain Id is the network's chainId (0x1, 0x89, etc)
+ */
 coinGeckoGetTokenomics2 = async (_chainId) => {
   let string =
     "https://api.coingecko.com/api/v3/simple/price?ids=" +
@@ -61,9 +53,4 @@ coinGeckoGetTokenomics2 = async (_chainId) => {
   let resp = await fetch(string);
   let jsn = resp.json();
   return jsn;
-  // await fetch(string)
-  //   .then((resp) => resp.json())
-  //   .then((data) => () {
-  //     return data
-  //   });
 };

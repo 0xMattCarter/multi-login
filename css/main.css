@@ -116,6 +116,18 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+.erc20 button {
+  margin-top: 0.5rem;
+  margin-right: 1rem;
+  width: 50px;
+  grid-column: 2;
+  justify-self: right;
+}
+
+/* .erc20 {
+  width: 10px;
+} */
+
 .erc20-t {
   padding: 0.5rem;
   grid-column: 1/3;
@@ -152,7 +164,19 @@ body {
   gap: 1rem;
 }
 
+#hidden-erc721s-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
 #erc1155s-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+#hidden-erc1155s-section {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 1rem;
@@ -161,6 +185,11 @@ body {
 .erc721 {
   padding: 1rem;
   max-width: 100px;
+}
+
+.erc721 button {
+  margin-top: 0.5rem;
+  width: 50px;
 }
 
 .nft-image {

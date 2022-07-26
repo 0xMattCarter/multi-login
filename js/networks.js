@@ -13,34 +13,28 @@ getNetworkBalances = async (_accounts, _chainId) => {
     ).balance;
     bal += parseFloat(ethers.utils.formatUnits(wei, 18));
   }
-
   return bal;
 };
 
 /**
- * Function to get _chainId's current block, current gas price,
- * and user's balance
+ * Gets a network's current block, gas price, and the balance for an array of accounts
  */
 getNetworkStats = async (_accounts, _chainId) => {
   if (_accounts.length == 0) {
     return ["", "", ""];
   } else {
-    let bal = 9999.0;
-    let block = "99999";
-    let gwei = "420";
-    bal = await getNetworkBalances(_accounts, _chainId);
     let prov = providers[_chainId];
-    block = await prov.getBlockNumber();
+    let bal = await getNetworkBalances(_accounts, _chainId);
+    let block = await prov.getBlockNumber();
     let wei = await prov.getGasPrice();
-    gwei = parseInt(ethers.utils.formatUnits(wei, 9));
+    let gwei = parseInt(ethers.utils.formatUnits(wei, 9));
     return [bal.toFixed(3), block, gwei];
   }
 };
 
 /**
- * Function to set network stats for an array of _chainIds.
- * Sets _accounts( [] ) cummulative network balance,
- * current block, & current gas price
+ * Sets network stats for an array of _chainIds
+ * Sets _accounts cummulative network balances,
  */
 setNetworkStats = async (_accounts, _chainIds) => {
   /// Single chain viewing, logged in
@@ -63,8 +57,8 @@ setNetworkStats = async (_accounts, _chainIds) => {
   }
   /// Multi-Chain viewing, logged in
   else {
-    document.getElementById("gas").innerText = "Gas: ~ xyz gwei";
-    document.getElementById("block").innerText = "Block: 1234567";
+    document.getElementById("gas").innerText = "";
+    document.getElementById("block").innerText = "";
     document.getElementById("network").innerText = "Network: Multi Chain";
   }
 };

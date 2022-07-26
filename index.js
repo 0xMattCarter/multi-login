@@ -4,8 +4,7 @@ Moralis.start({
   appId: "gcyGZTHHUSMv4th0e3mmky6eLcVrGCuXnvWPx2aO",
 });
 /// All information for adding networks
-/// ethereum, binance, polygon, arbitrum, avalanche, fantom, cronos
-
+/// ethereum, binance, polygon, avalanche
 var networks = {
   "0x0": {
     token: "",
@@ -39,13 +38,6 @@ var networks = {
     gecko: "polygon-pos",
     gecko2: "matic-network",
   },
-  // "0xa4b1": {
-  //   token: "ETH",
-  //   name: "Arbitrum",
-  //   node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/arbitrum/mainnet",
-  //   rpc: "https://arb1.arbitrum.io/rpc",
-  //   blockExplorer: "https://arbiscan.io/",
-  // },
   "0xa86a": {
     token: "AVAX",
     name: "Avalanche",
@@ -55,31 +47,14 @@ var networks = {
     gecko: "avalance",
     gecko2: "avalanche-2",
   },
-  // "0xfa": {
-  //   token: "FTM",
-  //   name: "Fantom",
-  //   node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/fantom/mainnet",
-  //   rpc: "https://rpc.ftm.tools",
-  //   blockExplorer: "https://ftmscan.com/",
-  // },
-  // "0x19": {
-  //   token: "CRO",
-  //   name: "Cronos",
-  //   node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/cronos/mainnet",
-  //   rpc: "https://evm.cronos.org",
-  //   blockExplorer: "https://cronoscan.com/",
-  // },
 };
 /// All ethers.js rpc providers
-/// eth, bnb, matic, arb, avax, fant, cro
+/// eth, bnb, matic, avax
 var providers = {
   "0x1": new ethers.providers.JsonRpcProvider(networks["0x1"].node),
   "0x38": new ethers.providers.JsonRpcProvider(networks["0x38"].node),
   "0x89": new ethers.providers.JsonRpcProvider(networks["0x89"].node),
-  // "0xa4b1": new ethers.providers.JsonRpcProvider(networks["0xa4b1"].node),
   "0xa86a": new ethers.providers.JsonRpcProvider(networks["0xa86a"].node),
-  // "0xfa": new ethers.providers.JsonRpcProvider(networks["0xfa"].node),
-  // "0x19": new ethers.providers.JsonRpcProvider(networks["0x19"].node),
 };
 /// All web3.js objects
 /// eth, bnb, matic, arb, avax, fant, cro
@@ -87,10 +62,7 @@ var web3js = {
   eth: new Web3(networks["0x1"].node),
   bnb: new Web3(networks["0x38"].node),
   matic: new Web3(networks["0x89"].node),
-  // arb: new Web3(networks["0xa4b1"].node),
   avax: new Web3(networks["0xa86a"].node),
-  // fant: new Web3(networks["0xfa"].node),
-  // cro: new Web3(networks["0x19"].node),
 };
 /// ABIs, address', etc
 /// NOTE: current values are not used
@@ -838,8 +810,8 @@ Moralis.onAccountChanged(async (_account) => {
   /// Normalize to checksum
   _account = ethers.utils.getAddress(_account);
   let accounts = await getUserAccounts(Moralis.User.current());
-  // console.log(accounts);
   document.getElementById("possible-link").innerHTML = "";
+  /// If the user has not linked this account yet
   if (!accounts.includes(_account)) {
     let el = document.createElement("div"),
       addr = document.createElement("div"),
@@ -854,17 +826,19 @@ Moralis.onAccountChanged(async (_account) => {
     document.getElementById("possible-link").appendChild(el);
   }
 });
-
 /// Login button
 var loggedIn = false;
 document.getElementById("login-btn").addEventListener("click", async () => {
+  /// Logging in
   if (!loggedIn) {
     let k = await authenticate();
     if (k[0]) {
       loggedIn = true;
       await run();
     }
-  } else {
+  }
+  /// Logging out
+  else {
     if (confirm("Log out?")) {
       await Moralis.User.logOut();
       loggedIn = false;
@@ -873,9 +847,7 @@ document.getElementById("login-btn").addEventListener("click", async () => {
     }
   }
 });
-
-/// Gets current user by cache or message signing
-/// Returns [auth status, account]
+/// Gets the current Moralis user or asks user to sign message to sign in
 async function authenticate() {
   let user = Moralis.User.current();
   if (!user) {
@@ -906,9 +878,9 @@ async function authenticate() {
   );
   return [true, ethers.utils.getAddress(Moralis.account)];
 }
-
 /// Function to add a network to user's (mm only) wallet if not already
 async function addNetwork(_cId) {
+  /// Only adds to metamask (not wallet connect)
   if (window.ethereum) {
     try {
       let ntk = networks[_cId];
@@ -930,12 +902,11 @@ async function addNetwork(_cId) {
     }
   }
 }
-
 /// App function that runs each refresh
 async function run() {
-  let user = Moralis.User.current();
-  let accounts = await getUserAccounts(user);
-  let chainId = ["0x1", "0x38", "0x89", "0xa86a"]; // default multichain arb taken out of this list for some reason
+  let user = Moralis.User.current(); // current user
+  let accounts = await getUserAccounts(user); // all user's accounts
+  let chainId = ["0x1", "0x38", "0x89", "0xa86a"]; // default multichain
   /// Change login btn text
   if (loggedIn) {
     document.getElementById("login-btn").innerText = shrinkAddr(
@@ -954,12 +925,13 @@ async function run() {
   } else {
     document.getElementById("login-btn").innerText = "Connect Wallet";
   }
-  // console.log("running", accounts, chainId);
+  /// Sets user stats (email, username, etc)
+  // await setUserStats(Moralis.User.current());
+
+  /// Sets block stats and user information
   await setNetworkStats(accounts, chainId);
+  /// Sets user's tokens
   await setTokens(accounts, chainId);
-
-  // then work on selectors/prov swaps
-
   console.log("session finished");
 }
 

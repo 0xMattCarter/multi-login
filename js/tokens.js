@@ -44,9 +44,12 @@ getTokenValues = async (_tokenAddr, _tokenAmount, _chainId) => {
  * Returns [ [721s], [1155s], { addr+id : balance } ]
  */
 getAllNfts = async (_accounts, _chainId) => {
+  var user = Moralis.User.current();
+  var toHide = await user.get("hidden_tokens");
   var all721s = [],
     all1155s = [],
-    bal1155s = {};
+    bal1155s = {},
+    hidden = {};
   for (let i = 0; i < _accounts.length; i++) {
     let cursor = null;
     /// Format from moralis to crawl across all results (useful when return is > 100 results)
@@ -73,22 +76,28 @@ getAllNfts = async (_accounts, _chainId) => {
             bal1155s[res.token_address + res.token_id] = parseInt(res.amount);
           }
         }
+        hidden[res.token_address] = toHide.includes(res.token_address);
       }
       cursor = response.cursor;
       /// Step to next batch of results
     } while (cursor != "" && cursor != null);
   }
-  return [all721s, all1155s, bal1155s];
+  return [all721s, all1155s, bal1155s, hidden];
 };
 /**
  * Function to set/draw nfts for an array of accounts on an array of chainIds
  */
 setNfts = async (_accounts, _chainIds) => {
+  let user = Moralis.User.current();
+  let toHide = await user.get("hidden_tokens");
   let section721 = document.getElementById("erc721s-section"),
     section1155 = document.getElementById("erc1155s-section");
+
+  let section721Hidden = document.getElementById("hidden-erc721s-section"),
+    section1155Hidden = document.getElementById("hidden-erc1155s-section");
   /// Clear gallaries
-  section721.innerHTML = "";
-  section1155.innerHTML = "";
+  (section721.innerHTML = ""), (section1155.innerHTML = "");
+  (section721Hidden.innerHTML = ""), (section1155Hidden.innerHTML = "");
   /// Iterate through each _chainId
   for (let j = 0; j < _chainIds.length; j++) {
     let nfts = await getAllNfts(_accounts, _chainIds[j]);
@@ -113,13 +122,13 @@ setNfts = async (_accounts, _chainIds) => {
         if (theNft.name == "Ethereum Name Service") {
           img.setAttribute("src", "images/ens.png");
         } else if (meta.image.substring(0, 7) == "ipfs://") {
-          console.log(
-            "raw ipfs",
-            meta.image.replace(
-              "ipfs://",
-              "https://nftsource.mypinata.cloud/ipfs/"
-            )
-          );
+          // console.log(
+          //   "raw ipfs",
+          //   meta.image.replace(
+          //     "ipfs://",
+          //     "https://nftsource.mypinata.cloud/ipfs/"
+          //   )
+          // );
           img.setAttribute(
             "src",
             meta.image.replace(
@@ -127,7 +136,7 @@ setNfts = async (_accounts, _chainIds) => {
               "https://nftsource.mypinata.cloud/ipfs/"
             )
           );
-        } //ipfs://QmQM7btqM2AXTBtLqEScUifjigMapAofyiYFRoQKxuFw6x/4808.png"
+        }
       } else {
         /// no metadata
         img.setAttribute("src", "images/bayc.png");
@@ -145,17 +154,40 @@ setNfts = async (_accounts, _chainIds) => {
         id.innerText = "#" + theNft.token_id;
       }
       addr.innerText = shrinkAddr(theNft.token_address);
+      btn = document.createElement("button");
+      btn.innerText = "Hide";
+      btn.onclick = () => {
+        hideContract(theNft.token_address);
+      };
+      if (toHide.includes(theNft.token_address)) {
+        /// When hidden
+        btn.innerText = "Show";
+        btn.onclick = () => {
+          unhideContract(theNft.token_address);
+        };
+      } else {
+        /// When showing
+        btn.innerText = "Hide";
+        btn.onclick = () => {
+          hideContract(theNft.token_address);
+        };
+      }
+
       n.appendChild(img),
         n.appendChild(name),
         n.appendChild(id),
         n.appendChild(floor),
         n.appendChild(addr),
+        n.appendChild(btn);
+      if (toHide.includes(theNft.token_address)) {
+        section721Hidden.appendChild(n);
+      } else {
         section721.appendChild(n);
+      }
     }
     /// draw each 1155
     for (let i = 0; i < all1155s.length; i++) {
       let theNft = all1155s[i];
-      console.log(theNft);
       let n = document.createElement("div"),
         img = document.createElement("img"),
         name = document.createElement("div"),
@@ -176,18 +208,15 @@ setNfts = async (_accounts, _chainIds) => {
       }
       try {
         await fetch(uri);
-        // console.log(JSON.parse(raw));
         $.getJSON(uri, function (metadata) {
-          console.log("meta", metadata);
-          // return;
           if (metadata.image.substring(0, 7) == "ipfs://") {
-            console.log(
-              "raw ipfs",
-              meta.image.replace(
-                "ipfs://",
-                "https://nftsource.mypinata.cloud/ipfs/"
-              )
-            );
+            // console.log(
+            //   "raw ipfs",
+            //   metadata.image.replace(
+            //     "ipfs://",
+            //     "https://nftsource.mypinata.cloud/ipfs/"
+            //   )
+            // );
             img.setAttribute(
               "src",
               metadata.image.replace(
@@ -216,13 +245,38 @@ setNfts = async (_accounts, _chainIds) => {
       theNft.token_id.length > 10
         ? (id.innerText = "#" + shrinkAddr(theNft.token_id))
         : (id.innerText = "#" + theNft.token_id);
+
+      btn = document.createElement("button");
+      btn.innerText = "Hide";
+      btn.onclick = () => {
+        hideContract(theNft.token_address);
+      };
+      if (toHide.includes(theNft.token_address)) {
+        /// When hidden
+        btn.innerText = "Show";
+        btn.onclick = () => {
+          unhideContract(theNft.token_address);
+        };
+      } else {
+        /// When showing
+        btn.innerText = "Hide";
+        btn.onclick = () => {
+          hideContract(theNft.token_address);
+        };
+      }
       n.appendChild(img),
         n.appendChild(name),
         n.appendChild(id),
         n.appendChild(bal),
         n.appendChild(floor),
         n.appendChild(addr),
+        n.appendChild(btn);
+
+      if (toHide.includes(theNft.token_address)) {
+        section1155Hidden.appendChild(n);
+      } else {
         section1155.appendChild(n);
+      }
     }
   }
 };
@@ -236,14 +290,13 @@ getAll20s = async (_accounts, _chainId) => {
     bal20s = {},
     used = [],
     usdVal = {},
-    cIdValue = {};
-
-  // make this only do all 20s, then go through all 20s, rather than doing the conditionals
+    cIdValue = {},
+    hidden = {};
   for (let i = 0; i < _accounts.length; i++) {
     let cursor = null;
     /// Format from moralis to crawl across all results (useful when return is > 100 results)
     do {
-      /// Get back of erc20 tokens _accounts[i] on _chainId
+      /// Get batch of erc20 tokens of _accounts[i] on _chainId
       const response = await Moralis.Web3API.account.getTokenBalances({
         chain: _chainId,
         address: _accounts[i],
@@ -270,7 +323,7 @@ getAll20s = async (_accounts, _chainId) => {
       cursor = response.cursor;
     } while (cursor != "" && cursor != null);
   }
-
+  /// Converts token balances to correct display amount (taking into account decimals) and gets values for the amount
   for (let i = 0; i < all20s.length; i++) {
     let theToken = all20s[i];
     let b = bal20s[theToken.token_address],
@@ -285,15 +338,20 @@ getAll20s = async (_accounts, _chainId) => {
     cIdValue[theToken.token_address] = tokenVals[1];
     bal20s[theToken.token_address] = displayBal;
   }
-  return [all20s, bal20s, usdVal, cIdValue];
+  return [all20s, bal20s, usdVal, cIdValue, hidden];
 };
 
 /**
  * Function to set/draw erc20s for an array of accounts on an array of chainIds
  */
 set20s = async (_accounts, _chainIds) => {
+  let user = Moralis.User.current();
+  let toHide = await user.get("hidden_tokens");
   let section20 = document.getElementById("erc20s-section");
+  let section20Hidden = document.getElementById("hidden-erc20s-section");
+
   section20.innerHTML = "";
+  section20Hidden.innerHTML = "";
   let portfolioTotal = "";
   let usdTotal = 0.0;
   /// Iterate through array of chainIds to check
@@ -317,12 +375,14 @@ set20s = async (_accounts, _chainIds) => {
       let displayBal = bal20s[theToken.token_address];
       let coinInUsd = usdVals[theToken.token_address];
       let coinInBase = cIdVals[theToken.token_address];
+
       /// HTML elements
       let n = document.createElement("div"),
         sym = document.createElement("div"),
         bal = document.createElement("div"),
         other = document.createElement("div"),
         addr = document.createElement("a");
+
       /// Html classes/etc
       n.classList.add("erc20"), n.classList.add("background-color1");
       addr.setAttribute(
@@ -344,14 +404,37 @@ set20s = async (_accounts, _chainIds) => {
         other.innerText =
           coinInUsd < 0.01 ? "< $0.01 " : "$" + coinInUsd.toFixed(2); /// Value of tokens in network currency
       }
-
+      let btn = document.createElement("button");
+      if (toHide.includes(theToken.token_address)) {
+        /// When hidden
+        btn.innerText = "Show";
+        btn.onclick = () => {
+          unhideContract(theToken.token_address);
+        };
+      } else {
+        /// When showing
+        btn.innerText = "Hide";
+        btn.onclick = () => {
+          hideContract(theToken.token_address);
+        };
+      }
       addr.innerText = shrinkAddr(theToken.token_address); /// Token address
+
       /// Add HTML
-      n.appendChild(sym), n.appendChild(bal), n.appendChild(addr);
-      n.appendChild(other), section20.appendChild(n);
-      /// Increment USD total and this network's total
-      usdTotal += coinInUsd;
-      thisTotal += coinInBase;
+      n.appendChild(sym),
+        n.appendChild(bal),
+        n.appendChild(addr),
+        n.appendChild(other),
+        n.appendChild(btn);
+
+      if (toHide.includes(theToken.token_address)) {
+        section20Hidden.appendChild(n);
+      } else {
+        section20.appendChild(n);
+        /// Increment USD total and this network's total
+        usdTotal += coinInUsd;
+        thisTotal += coinInBase;
+      }
     }
     /// Increment portfolio total (for each network selected)
     portfolioTotal +=
