@@ -44,8 +44,31 @@
       <!-- <div class="link">
         <div>0x1234...3333</div>
         <button class="unlink-btn">remove</button>
+        <div>
+          <label for="group1">Add to group</label>
+          <input
+            type="checkbox"
+            class="group-checker"
+            name="group1"
+            id="group1"
+            value="0x1232323232"
+          />
+        </div>
       </div> -->
     </div>
+    <input id="group-input" type="text" placeholder="name this group" />
+    <button id="create-group-btn">Create Group</button>
+    <h2>ADDRESS GROUPS</h2>
+    <div id="account-groups-section">
+      <!-- <div class="group">
+        <div class="g">Group1</div>
+        <button class="g1 unlink-btn">remove</button>
+        <div class="g2">
+          0x123..123, 0x456...456
+        </div>
+      </div> -->
+    </div>
+
     <div class="selectors-section">
       <select
         id="chain-selector"
@@ -120,6 +143,11 @@
         <div>Address</div>
       </div> -->
     </div>
+    <div id="total-nfts" class="background-color1">
+      <div id="ttt1">Summary</div>
+      <div id="ttt2"></div>
+      <div id="ttt3"></div>
+    </div>
     <h3>Hidden</h3>
     <h4>erc721s</h4>
     <div id="hidden-erc721s-section"></div>
@@ -129,6 +157,7 @@
     <script src="index.js" type="text/javascript"></script>
     <script src="js/utils.js" type="text/javascript"></script>
     <script src="js/tokens.js" type="text/javascript"></script>
+    <script src="js/floors.js" type="text/javascript"></script>
     <script src="js/networks.js" type="text/javascript"></script>
     <script src="js/users.js" type="text/javascript"></script>
   </body>

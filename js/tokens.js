@@ -45,11 +45,11 @@ getTokenValues = async (_tokenAddr, _tokenAmount, _chainId) => {
  */
 getAllNfts = async (_accounts, _chainId) => {
   var user = Moralis.User.current();
-  var toHide = await user.get("hidden_tokens");
   var all721s = [],
     all1155s = [],
     bal1155s = {},
-    hidden = {};
+    floors = {};
+  /// get fllor prices here too, only make call once per contract, dont repeat
   for (let i = 0; i < _accounts.length; i++) {
     let cursor = null;
     /// Format from moralis to crawl across all results (useful when return is > 100 results)
@@ -62,10 +62,13 @@ getAllNfts = async (_accounts, _chainId) => {
       });
       /// Iterate through batch
       for (const res of response.result) {
+        console.log("res", res);
+
         /// 721s
         if (res.contract_type == "ERC721") {
           all721s.push(res);
         }
+
         /// 1155s
         else if (res.contract_type == "ERC1155") {
           all1155s.push(res);
@@ -76,34 +79,51 @@ getAllNfts = async (_accounts, _chainId) => {
             bal1155s[res.token_address + res.token_id] = parseInt(res.amount);
           }
         }
-        hidden[res.token_address] = toHide.includes(res.token_address);
+        /// check floor or already did ?
+        if (floors[res.token_address] == undefined) {
+          floors[res.token_address] = await getFloorPrice(
+            res.token_address,
+            _chainId
+          );
+        }
+        // hidden[res.token_address] = toHide.includes(res.token_address);
       }
       cursor = response.cursor;
       /// Step to next batch of results
     } while (cursor != "" && cursor != null);
   }
-  return [all721s, all1155s, bal1155s, hidden];
+  return [all721s, all1155s, bal1155s, floors];
 };
 /**
  * Function to set/draw nfts for an array of accounts on an array of chainIds
  */
 setNfts = async (_accounts, _chainIds) => {
   let user = Moralis.User.current();
-  let toHide = await user.get("hidden_tokens");
+  let toHide = [];
+  if (user) {
+    toHide = await user.get("hidden_tokens");
+  }
   let section721 = document.getElementById("erc721s-section"),
     section1155 = document.getElementById("erc1155s-section");
-
   let section721Hidden = document.getElementById("hidden-erc721s-section"),
     section1155Hidden = document.getElementById("hidden-erc1155s-section");
   /// Clear gallaries
   (section721.innerHTML = ""), (section1155.innerHTML = "");
   (section721Hidden.innerHTML = ""), (section1155Hidden.innerHTML = "");
+  (document.getElementById("ttt2").innerText = ""),
+    (document.getElementById("ttt3").innerText = "");
+  let portfolioTotal = "";
+  let usdTotal = 0.0;
   /// Iterate through each _chainId
   for (let j = 0; j < _chainIds.length; j++) {
     let nfts = await getAllNfts(_accounts, _chainIds[j]);
     let all721s = nfts[0];
     let all1155s = nfts[1];
     let bal1155s = nfts[2];
+    let floors = nfts[3];
+    let thisTotal = 0.0;
+    let thisNtkPrice = await _getBaseValue(_chainIds[j]);
+    console.log(_chainIds[j], thisNtkPrice);
     /// draw each 721
     for (let i = 0; i < all721s.length; i++) {
       let theNft = all721s[i];
@@ -147,7 +167,6 @@ setNfts = async (_accounts, _chainIds) => {
       ),
         addr.setAttribute("target", "_blank");
       name.innerText = theNft.name;
-      floor.innerText = "getFloor";
       if (theNft.name == "Ethereum Name Service") {
         id.innerText = meta.name;
       } else {
@@ -159,6 +178,7 @@ setNfts = async (_accounts, _chainIds) => {
       btn.onclick = () => {
         hideContract(theNft.token_address);
       };
+      let theFloor = "";
       if (toHide.includes(theNft.token_address)) {
         /// When hidden
         btn.innerText = "Show";
@@ -167,11 +187,24 @@ setNfts = async (_accounts, _chainIds) => {
         };
       } else {
         /// When showing
+        theFloor =
+          document.getElementById("currency-selector").value == "usd"
+            ? "Floor: $" +
+              (floors[theNft.token_address] * thisNtkPrice).toFixed(2)
+            : "Floor: " +
+              floors[theNft.token_address].toFixed(3) +
+              " " +
+              networks[_chainIds[j]].token;
+        // theFloor = "Floor: " + floors[theNft.token_address];
+        thisTotal += parseFloat(floors[theNft.token_address]);
+        usdTotal += parseFloat(floors[theNft.token_address]) * thisNtkPrice;
+        /// add floor to this total
         btn.innerText = "Hide";
         btn.onclick = () => {
           hideContract(theNft.token_address);
         };
       }
+      floor.innerText = theFloor;
 
       n.appendChild(img),
         n.appendChild(name),
@@ -185,6 +218,7 @@ setNfts = async (_accounts, _chainIds) => {
         section721.appendChild(n);
       }
     }
+
     /// draw each 1155
     for (let i = 0; i < all1155s.length; i++) {
       let theNft = all1155s[i];
@@ -238,7 +272,7 @@ setNfts = async (_accounts, _chainIds) => {
       ),
         addr.setAttribute("target", "_blank");
       name.innerText = theNft.name;
-      floor.innerText = "getFloor * bal";
+      let theFloor = "";
 
       bal.innerText = "x" + bal1155s[theNft.token_address + theNft.token_id];
       addr.innerText = shrinkAddr(theNft.token_address);
@@ -259,11 +293,30 @@ setNfts = async (_accounts, _chainIds) => {
         };
       } else {
         /// When showing
+        theFloor =
+          document.getElementById("currency-selector").value == "usd"
+            ? "Floor: $" +
+              (
+                parseFloat(bal1155s[theNft.token_address + theNft.token_id]) *
+                floors[theNft.token_address] *
+                thisNtkPrice
+              ).toFixed(2)
+            : "Floor: " +
+              (
+                parseFloat(bal1155s[theNft.token_address + theNft.token_id]) *
+                floors[theNft.token_address]
+              ).toFixed(3) +
+              " " +
+              networks[_chainIds[j]].token;
+        thisTotal += parseFloat(floors[theNft.token_address]);
+        usdTotal += parseFloat(floors[theNft.token_address]) * thisNtkPrice;
         btn.innerText = "Hide";
         btn.onclick = () => {
           hideContract(theNft.token_address);
         };
       }
+
+      floor.innerText = theFloor;
       n.appendChild(img),
         n.appendChild(name),
         n.appendChild(id),
@@ -278,7 +331,15 @@ setNfts = async (_accounts, _chainIds) => {
         section1155.appendChild(n);
       }
     }
+    /// set portfolio after each chain
+    portfolioTotal +=
+      thisTotal.toFixed(5) + " " + networks[_chainIds[j]].token + "\n";
+    document.getElementById("ttt2").innerText = portfolioTotal;
+    document.getElementById("ttt3").innerText = "$" + usdTotal.toFixed(2);
   }
+  /// set nft totals
+  document.getElementById("ttt2").innerText = portfolioTotal;
+  document.getElementById("ttt3").innerText = "$" + usdTotal.toFixed(2);
 };
 
 /**
@@ -346,14 +407,19 @@ getAll20s = async (_accounts, _chainId) => {
  */
 set20s = async (_accounts, _chainIds) => {
   let user = Moralis.User.current();
-  let toHide = await user.get("hidden_tokens");
+  let toHide = [];
+  if (user) {
+    toHide = await user.get("hidden_tokens");
+  }
+  // let toHide = user ? [] : await user.get("hidden_tokens");
   let section20 = document.getElementById("erc20s-section");
   let section20Hidden = document.getElementById("hidden-erc20s-section");
 
-  section20.innerHTML = "";
-  section20Hidden.innerHTML = "";
+  (section20.innerHTML = ""), (section20Hidden.innerHTML = "");
   let portfolioTotal = "";
   let usdTotal = 0.0;
+  document.getElementById("tt2").innerText = "";
+  document.getElementById("tt3").innerText = "";
   /// Iterate through array of chainIds to check
   for (let j = 0; j < _chainIds.length; j++) {
     /// Network balances

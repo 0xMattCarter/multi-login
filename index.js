@@ -906,7 +906,7 @@ async function addNetwork(_cId) {
 async function run() {
   let user = Moralis.User.current(); // current user
   let accounts = await getUserAccounts(user); // all user's accounts
-  let chainId = ["0x1", "0x38", "0x89", "0xa86a"]; // default multichain
+  let chainId = []; // default multichain
   /// Change login btn text
   if (loggedIn) {
     document.getElementById("login-btn").innerText = shrinkAddr(
@@ -916,11 +916,19 @@ async function run() {
     let chainSel = document.getElementById("chain-selector").value;
     if (chainSel != "0x0") {
       chainId = [chainSel];
+    } else {
+      chainId = ["0x1", "0x38", "0x89", "0xa86a"];
     }
     /// Which account(s) ?
     let accountSel = document.getElementById("account-selector").value;
-    if (accountSel != "all") {
-      accounts = [accountSel];
+    if (accountSel == "all") {
+      // do nothing
+    } else {
+      console.log(accountSel, accountSel.split(","));
+      accounts = accountSel.split(",");
+      // console.log(accounts);
+      // accounts = accounts.split(",");
+      // console.log(account);
     }
   } else {
     document.getElementById("login-btn").innerText = "Connect Wallet";

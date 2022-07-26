@@ -90,6 +90,60 @@ hideContract = async (_address) => {
   }
 };
 
+makeAddressGroup = async () => {
+  let _groupName = document.getElementById("group-input").value;
+  let sels = document.getElementsByClassName("group-checker");
+  _addresses = [];
+  console.log(sels, sels.length);
+
+  for (let i = 0; i < sels.length; i++) {
+    if (sels[i].checked) {
+      _addresses.push(sels[i].value);
+    }
+  }
+  console.log(_addresses);
+  // console.log(gName, sels);
+
+  if (confirm("Create " + _groupName + " with:\n" + _addresses + " ?")) {
+    let user = Moralis.User.current();
+    let groups = await user.get("address_groups");
+    if (groups == undefined) {
+      groups = {};
+    }
+    groups[_groupName] = _addresses;
+    await user.set("address_groups", groups);
+    await user.save();
+    await setUserStats(user);
+    await run();
+  }
+};
+
+removeAddressGroup = async (_groupName, _addrs) => {
+  if (confirm("Remove " + _groupName + " with " + _addrs + " ?")) {
+    let user = Moralis.User.current();
+    let groups = await user.get("address_groups");
+    if (groups == undefined) {
+      groups = {};
+    }
+    try {
+      console.log(groups);
+      delete groups[_groupName];
+      console.log("after delete", groups);
+      await user.set("address_groups", groups);
+      await user.save();
+      await setUserStats(user);
+      await run();
+      console.log(groups);
+    } catch (error) {
+      console.log(groups, _groupName, groups[_groupName]);
+      console.log(
+        "failed to delete this group, are you sure it exists ?",
+        error
+      );
+    }
+  }
+};
+
 unhideContract = async (_address) => {
   if (confirm("Un-hide tokens from this contract address?\n" + _address)) {
     let user = Moralis.User.current();
@@ -151,19 +205,21 @@ link = async (_account) => {
  * Function to get a user's stats. Username, email, userId, links
  */
 getUserStats = async (_user) => {
-  var username, uId, email, links;
+  var username, uId, email, links, groups;
   if (!_user) {
-    (username = ""), (uId = ""), (email = ""), (links = []);
+    (username = ""), (uId = ""), (email = ""), (links = []), (groups = {});
   } else {
     (username = await _user.get("omni_username")),
       (uId = shrinkAddr(_user.id)),
       (email = await _user.get("email")),
-      (links = await getUserAccounts(_user));
+      (links = await getUserAccounts(_user)),
+      (groups = await _user.get("address_groups"));
     /// Set defaults if not set
     username = !username ? "Not Set" : username;
     email = !email ? "Not Set" : email;
+    groups = !groups ? {} : groups;
   }
-  return [username, uId, email, links];
+  return [username, uId, email, links, groups];
 };
 
 /**
@@ -182,11 +238,14 @@ setUserStats = async (_user) => {
   /// Wipe linked accounts selector choices
   document.getElementById("account-selector").innerHTML = "";
   let links = stats[3];
-  if (Moralis.User.current()) {
-  }
+  let groups = stats[4];
+
   /// Adds default address to selector options, but skips in for loop
   /// this is to skip adding the default addr to the linked addr section
   if (links[0] != undefined) {
+    if (links[0].length > 1) {
+      document.getElementById("create-group-btn").onclick = makeAddressGroup;
+    }
     /// Reorder links to have the default address first
     let def = ethers.utils.getAddress(Moralis.account);
     let ind = links.indexOf(def);
@@ -194,23 +253,33 @@ setUserStats = async (_user) => {
     links[ind] = copy;
     links[0] = def;
     /// Create html
-    let optB = document.createElement("option");
-    optB.value = links[0];
-    optB.innerText = shrinkAddr(links[0]);
-    document.getElementById("account-selector").appendChild(optB);
+    // let optB = document.createElement("option");
+    // optB.value = links[0];
+    // optB.innerText = shrinkAddr(links[0]);
+    // document.getElementById("account-selector").appendChild(optB);
   }
-  for (let i = 1; i < links.length; i++) {
+  for (let i = 0; i < links.length; i++) {
     /// Draw each linked account
     let el = document.createElement("div"),
       addr = document.createElement("div"),
       btn = document.createElement("button");
+    let dd = document.createElement("div"),
+      dd1 = document.createElement("label"),
+      dd2 = document.createElement("input");
+    dd1.innerText = "Add to group";
+    dd2.classList.add("group-checker"),
+      (dd2.type = "checkbox"),
+      (dd2.name = "Group" + i + 1),
+      (dd2.value = links[i]);
+    dd.appendChild(dd2);
+    dd.appendChild(dd1);
     addr.innerText = shrinkAddr(links[i]);
     btn.innerText = "remove";
     el.classList.add("link"), btn.classList.add("unlink-btn");
     btn.onclick = () => {
       unlink(links[i], _user);
     };
-    el.appendChild(addr), el.appendChild(btn);
+    el.appendChild(addr), el.appendChild(btn), el.appendChild(dd);
     document.getElementById("linked-accounts-section").appendChild(el);
     /// Draw each linked account selector
     let opt = document.createElement("option");
@@ -219,6 +288,50 @@ setUserStats = async (_user) => {
     document.getElementById("account-selector").appendChild(opt);
   }
   /// Draw "All" option for account selector choices
+  document.getElementById("account-groups-section").innerHTML = "";
+  for (let g in groups) {
+    let _addrs = groups[g];
+    let theG = document.createElement("div"),
+      g1 = document.createElement("div"),
+      g2 = document.createElement("button"),
+      g3 = document.createElement("div");
+
+    theG.classList.add("group"),
+      g1.classList.add("g"),
+      g2.classList.add("g1"),
+      g2.classList.add("unlink-btn"),
+      g3.classList.add("g2");
+
+    g1.innerText = g;
+    g2.innerText = "remove";
+
+    g2.onclick = async () => {
+      removeAddressGroup(g, _addrs);
+    };
+    let txt = "";
+
+    for (let j = 0; j < _addrs.length; j++) {
+      if (j == _addrs.length - 1) {
+        txt += shrinkAddr(_addrs[j]);
+      } else {
+        txt += shrinkAddr(_addrs[j]) + ", ";
+      }
+    }
+    g3.innerText = txt;
+
+    theG.appendChild(g1);
+    theG.appendChild(g2);
+    theG.appendChild(g3);
+    document.getElementById("account-groups-section").appendChild(theG);
+    // add this group to account-sels
+    let opt = document.createElement("option");
+    opt.value = _addrs;
+    console.log(_addrs, opt.value);
+
+    opt.innerText = g;
+    document.getElementById("account-selector").appendChild(opt);
+  }
+  /// ********************* add all groups here as well
   let optA = document.createElement("option");
   optA.value = "all";
   optA.innerText = "All";

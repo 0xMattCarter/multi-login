@@ -37,28 +37,47 @@ getNetworkStats = async (_accounts, _chainId) => {
  * Sets _accounts cummulative network balances,
  */
 setNetworkStats = async (_accounts, _chainIds) => {
-  /// Single chain viewing, logged in
-  if (_chainIds.length == 1 && _accounts.length > 0) {
-    let stats = await getNetworkStats(_accounts, _chainIds[0]);
-    document.getElementById("gas").innerText = "Gas: ~ " + stats[2] + " gwei";
-    document.getElementById("block").innerText = "Block: " + stats[1];
-    document.getElementById("network").innerText =
-      "Network: " + networks[_chainIds[0]].name;
-    document.getElementById("base-name").innerText =
-      networks[_chainIds[0]].name;
-    document.getElementById("base-bal").innerText =
-      stats[0] + " " + networks[_chainIds[0]].token;
-  }
-  /// Logged Out view
-  else if (_accounts.length == 0) {
+  if (!Moralis.User.current()) {
+    console.log("bitch");
     document.getElementById("gas").innerText = "";
     document.getElementById("block").innerText = "";
     document.getElementById("network").innerText = "";
+    document.getElementById("base-name").innerText = "";
+    document.getElementById("base-bal").innerText = "";
   }
-  /// Multi-Chain viewing, logged in
+  /// Single chain viewing, logged in
   else {
-    document.getElementById("gas").innerText = "";
-    document.getElementById("block").innerText = "";
-    document.getElementById("network").innerText = "Network: Multi Chain";
+    //(_chainIds.length == 1 && _accounts.length > 0)
+    if (_chainIds.length == 1) {
+      let stats = await getNetworkStats(_accounts, _chainIds[0]);
+      document.getElementById("gas").innerText = "Gas: ~ " + stats[2] + " gwei";
+      document.getElementById("block").innerText = "Block: " + stats[1];
+      document.getElementById("network").innerText =
+        "Network: " + networks[_chainIds[0]].name;
+      document.getElementById("base-name").innerText =
+        networks[_chainIds[0]].name;
+      document.getElementById("base-bal").innerText =
+        stats[0] + " " + networks[_chainIds[0]].token;
+    } else {
+      document.getElementById("gas").innerText = "";
+      document.getElementById("block").innerText = "";
+      document.getElementById("network").innerText = "";
+      // document.getElementById("base-name").innerText =
+      //   "";
+      // document.getElementById("base-bal").innerText =
+      //   "";
+    }
   }
+  // /// Logged Out view
+  // else if (_accounts.length == 0) {
+  //   document.getElementById("gas").innerText = "";
+  //   document.getElementById("block").innerText = "";
+  //   document.getElementById("network").innerText = "";
+  // }
+  // /// Multi-Chain viewing, logged in
+  // else {
+  //   document.getElementById("gas").innerText = "";
+  //   document.getElementById("block").innerText = "";
+  //   document.getElementById("network").innerText = "Network: Multi Chain";
+  // }
 };
