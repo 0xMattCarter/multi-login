@@ -148,6 +148,9 @@ unhideContract = async (_address) => {
   if (confirm("Un-hide tokens from this contract address?\n" + _address)) {
     let user = Moralis.User.current();
     let hidden = await user.get("hidden_tokens");
+    if (hidden == undefined) {
+      hideen = [];
+    }
     try {
       let i = hidden.indexOf(_address);
       console.log(i, hidden);

@@ -102,6 +102,9 @@ setNfts = async (_accounts, _chainIds) => {
   let toHide = [];
   if (user) {
     toHide = await user.get("hidden_tokens");
+    if (toHide == undefined) {
+      toHide = [];
+    }
   }
   let section721 = document.getElementById("erc721s-section"),
     section1155 = document.getElementById("erc1155s-section");
