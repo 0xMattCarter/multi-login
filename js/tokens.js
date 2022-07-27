@@ -410,6 +410,9 @@ set20s = async (_accounts, _chainIds) => {
   let toHide = [];
   if (user) {
     toHide = await user.get("hidden_tokens");
+    if (toHide == undefined) {
+      toHide = [];
+    }
   }
   // let toHide = user ? [] : await user.get("hidden_tokens");
   let section20 = document.getElementById("erc20s-section");
