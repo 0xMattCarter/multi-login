@@ -1,5 +1,23 @@
-// hello world
+/// Sets API rate limits
+Moralis.settings.setAPIRateLimit({
+  anonymous: 1000,
+  authenticated: 2000,
+  windowMs: 60000,
+});
 
-// this is where all cloud code will go if any if added
+/// Checks if a username is already taken
+Moralis.Cloud.define("isUsernameUnique", async (params) => {
+  const userQuery = new Moralis.Query(Moralis.User);
+  const results = await userQuery.find({ useMasterKey: true });
 
-// look at ./matt/info.txt to see how to sync folders
+  for (let i = 0; i < results.length; i++) {
+    let res = results[i];
+    let thisOne = res.attributes.omni_username;
+    let check = params.params.username;
+
+    if (thisOne == check) {
+      return false;
+    }
+  }
+  return true;
+});

@@ -1,3 +1,7 @@
+/**
+ * MAIN FUNCTIONS
+ */
+
 /// Starts Moralis server
 Moralis.start({
   serverUrl: "https://pz3ac4aydbjr.usemoralis.com:2053/server",
@@ -44,7 +48,7 @@ var networks = {
     node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/avalanche/mainnet",
     rpc: "https://api.avax.network/ext/bc/C/rpc",
     blockExplorer: "https://snowtrace.io/",
-    gecko: "avalance",
+    gecko: "avalanche",
     gecko2: "avalanche-2",
   },
 };
@@ -804,28 +808,7 @@ const params = {
     },
   ],
 };
-/// When user changes account in metamask
-Moralis.onAccountChanged(async (_account) => {
-  console.log("account swap");
-  /// Normalize to checksum
-  _account = ethers.utils.getAddress(_account);
-  let accounts = await getUserAccounts(Moralis.User.current());
-  document.getElementById("possible-link").innerHTML = "";
-  /// If the user has not linked this account yet
-  if (!accounts.includes(_account)) {
-    let el = document.createElement("div"),
-      addr = document.createElement("div"),
-      btn = document.createElement("button");
-    addr.innerText = shrinkAddr(_account);
-    btn.innerText = "add";
-    el.classList.add("link-special"), btn.classList.add("link-btn-special");
-    btn.onclick = () => {
-      link(_account);
-    };
-    el.appendChild(addr), el.appendChild(btn);
-    document.getElementById("possible-link").appendChild(el);
-  }
-});
+
 /// Login button
 var loggedIn = false;
 document.getElementById("login-btn").addEventListener("click", async () => {
@@ -872,11 +855,11 @@ async function authenticate() {
   await Moralis.enableWeb3();
   await setUserStats(user);
   console.log(
-    "signed in user",
+    "signed in user ",
     user,
-    ethers.utils.getAddress(user.get("ethAddress"))
+    `with ${ethers.utils.getAddress(user.get("ethAddress"))}`
   );
-  return [true, ethers.utils.getAddress(Moralis.account)];
+  return [true, ethers.utils.getAddress(user.get("ethAddress"))];
 }
 /// Function to add a network to user's (mm only) wallet if not already
 async function addNetwork(_cId) {
@@ -907,10 +890,11 @@ async function run() {
   let user = Moralis.User.current(); // current user
   let accounts = await getUserAccounts(user); // all user's accounts
   let chainId = []; // default multichain
+  let currencySel = "native";
   /// Change login btn text
   if (loggedIn) {
     document.getElementById("login-btn").innerText = shrinkAddr(
-      Moralis.account
+      user.get("ethAddress")
     );
     /// Which chain(s) ?
     let chainSel = document.getElementById("chain-selector").value;
@@ -924,12 +908,9 @@ async function run() {
     if (accountSel == "all") {
       // do nothing
     } else {
-      console.log(accountSel, accountSel.split(","));
       accounts = accountSel.split(",");
-      // console.log(accounts);
-      // accounts = accounts.split(",");
-      // console.log(account);
     }
+    currencySel = document.getElementById("currency-selector").value;
   } else {
     document.getElementById("login-btn").innerText = "Connect Wallet";
   }
@@ -939,7 +920,8 @@ async function run() {
   /// Sets block stats and user information
   await setNetworkStats(accounts, chainId);
   /// Sets user's tokens
-  await setTokens(accounts, chainId);
+  await setAccountTokens(accounts, chainId, currencySel);
+  await setAccountNfts(accounts, chainId, currencySel);
   console.log("session finished");
 }
 

@@ -83,11 +83,12 @@ body {
   padding: 0.5rem;
   display: grid;
   grid-template-columns: auto auto auto;
+  font-size: 13px;
 }
 
-/* #group-input {
-  width: 490px;
-} */
+#group-input {
+  margin-top: 1rem;
+}
 
 .group {
   background-color: #48a6a977;
@@ -142,6 +143,11 @@ body {
 }
 
 #erc20s-section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+#hidden-erc20s-section {
   display: grid;
   gap: 0.5rem;
 }
@@ -219,8 +225,9 @@ body {
 }
 
 .erc721 {
-  padding: 1rem;
+  padding: 2rem;
   max-width: 100px;
+  font-size: 12px;
 }
 
 .erc721 button {
