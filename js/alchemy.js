@@ -1,11 +1,10 @@
 /**
  * ALCHEMY API FUNCTIONS
- * not usded currently
+ * not used currently
  */
 
 const ethAlchemyKey = "";
-const polygonAlchemyKey = "uipyG-";
-
+const polygonAlchemyKey = "";
 const alchemyParams = {
   "0x1": `https://eth-mainnet.alchemyapi.io/nft/v2/${ethAlchemyKey}`,
   "0x89": `https://polygon-mainnet.g.alchemy.com/v2/${polygonAlchemyKey}`,

@@ -1,13 +1,11 @@
 /**
- * MORALIS API FUNCTIONS
- * Gets nfts/tokens
- * Gets network balances
- * Gets nft floor prices
- * Gets nft last sale prices
- * When accounts switch
+ * MORALIS FUNCTIONS
  */
 
-/// Gets NFTs for an array of accounts
+/**
+ * Gets nfts for an array of accounts on an
+ * array of chainIds
+ */
 moralisAccountNfts = async (_accounts, _chainIds) => {
   var obj = {};
 
@@ -62,7 +60,10 @@ moralisAccountNfts = async (_accounts, _chainIds) => {
   return obj;
 };
 
-/// Gets tokens for an array of accounts
+/**
+ * Gets tokens and balances for an array of accounts
+ * on an array of chainIds
+ */
 moralisAccountTokens = async (_accounts, _chainIds) => {
   var obj = {};
 
@@ -92,7 +93,9 @@ moralisAccountTokens = async (_accounts, _chainIds) => {
             obj[_chainIds[j]].erc20.tokens.push(res);
             obj[_chainIds[j]].erc20.balances[res.token_address] =
               parseFloat(res.balance) / 10.0 ** parseFloat(res.decimals);
-          } else {
+          }
+          /// Duplicate tokens
+          else {
             obj[_chainIds[j]].erc20.balances[res.token_address] +=
               parseFloat(res.balance) / 10.0 ** parseFloat(res.decimals);
           }
@@ -105,9 +108,11 @@ moralisAccountTokens = async (_accounts, _chainIds) => {
   return obj;
 };
 
-/// Gets network balances for an array of accounts
+/**
+ * Gets networks balances for an array of accounts on
+ * an array of chainIds
+ */
 moralisAccountNativeBalances = async (_accounts, _chainIds) => {
-  /// Get network balances for _accounts
   var obj = {};
   for (let j = 0; j < _chainIds.length; j++) {
     var bal = 0.0;
@@ -125,7 +130,11 @@ moralisAccountNativeBalances = async (_accounts, _chainIds) => {
   return obj;
 };
 
-/// Gets a contract's floor price in eth/matic/avax/bnb
+/**
+ * Returns the lowest price an nft was sold for in the last x days
+ * (1, 3, 7, 30, 90, 180)
+ * Might want to enhance by averaging sales over x and y days
+ */
 moralisFloorPrice = async (_contractAddress, _cId) => {
   var options = {
     address: _contractAddress,
@@ -174,9 +183,10 @@ moralisFloorPrice = async (_contractAddress, _cId) => {
   return price;
 };
 
-/// Gets the price a token was sold for
+/**
+ * Gets the last price an nft was sold for
+ */
 moralisLastSalePrice = async (_contractAddress, _tId, _cId) => {
-  let reses = [];
   let cursor = null;
 
   try {
@@ -202,32 +212,43 @@ moralisLastSalePrice = async (_contractAddress, _tId, _cId) => {
   }
 };
 
-/// Gets a tokens floor price, last sold price, and difference between the two
+/**
+ * Gets an nfts floor price, last sold price, and gain (floor - last)
+ */
 moralisNftTokenomics = async (_contractAddress, _tId, _cId) => {
   let flr = await moralisFloorPrice(_contractAddress, _cId);
   let lst = await moralisLastSalePrice(_contractAddress, _tId, _cId);
   return { floor: flr, last: lst, gain: flr - lst };
 };
 
-/// When user changes account in metamask
+/**
+ * Subscribe to metamask account change event
+ */
 Moralis.onAccountChanged(async (_account) => {
-  console.log("account swap");
-  /// Normalize to checksum
-  _account = ethers.utils.getAddress(_account);
-  let accounts = await getUserAccounts(Moralis.User.current());
-  document.getElementById("possible-link").innerHTML = "";
-  /// If the user has not linked this account yet
-  if (!accounts.includes(_account)) {
-    let el = document.createElement("div"),
-      addr = document.createElement("div"),
-      btn = document.createElement("button");
-    addr.innerText = shrinkAddr(_account);
-    btn.innerText = "add";
-    el.classList.add("link-special"), btn.classList.add("link-btn-special");
-    btn.onclick = () => {
-      link(_account);
-    };
-    el.appendChild(addr), el.appendChild(btn);
-    document.getElementById("possible-link").appendChild(el);
+  let user = Moralis.User.current();
+  if (user) {
+    let lastProvider = await user.get("last_provider");
+    /// Moralis.link only works with metamask (browser)
+    if (lastProvider == "metamask") {
+      console.log("account swap");
+      /// Normalize to checksum
+      _account = ethers.utils.getAddress(_account);
+      let accounts = await getUserAccounts(Moralis.User.current());
+      document.getElementById("possible-link").innerHTML = "";
+      /// If the user has not linked this account yet
+      if (!accounts.includes(_account)) {
+        let el = document.createElement("div"),
+          addr = document.createElement("div"),
+          btn = document.createElement("button");
+        addr.innerText = shrinkAddr(_account);
+        btn.innerText = "add";
+        el.classList.add("link-special"), btn.classList.add("link-btn-special");
+        btn.onclick = () => {
+          link(_account);
+        };
+        el.appendChild(addr), el.appendChild(btn);
+        document.getElementById("possible-link").appendChild(el);
+      }
+    }
   }
 });

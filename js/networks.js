@@ -2,7 +2,9 @@
  * NETWORK FUNCTIONS
  */
 
-/// Gets a network's current block and gas price
+/**
+ * Gets a netowork's current blocko and avg gas price (in gwei)
+ */
 getNetworkStats = async (_accounts, _chainId) => {
   let obj = { block: "", gas: "" };
   if (_accounts.length > 0) {
@@ -13,16 +15,12 @@ getNetworkStats = async (_accounts, _chainId) => {
   return obj;
 };
 
-/// Sets network stats for an array of _chainIds
+/**
+ * Set the network stats for an array of chainIds
+ */
 setNetworkStats = async (_accounts, _chainIds) => {
-  if (!Moralis.User.current()) {
-    console.log("bitch");
-    document.getElementById("gas").innerText = "";
-    document.getElementById("block").innerText = "";
-    document.getElementById("network").innerText = "";
-  }
-  /// Logged in
-  else {
+  /// Logged out
+  if (Moralis.User.current()) {
     /// Single Chain
     if (_chainIds.length == 1) {
       let stats = await getNetworkStats(_accounts, _chainIds[0]);
@@ -37,5 +35,11 @@ setNetworkStats = async (_accounts, _chainIds) => {
       document.getElementById("block").innerText = "";
       document.getElementById("network").innerText = "";
     }
+  }
+  /// Logged in
+  else {
+    document.getElementById("gas").innerText = "";
+    document.getElementById("block").innerText = "";
+    document.getElementById("network").innerText = "";
   }
 };

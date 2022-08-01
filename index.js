@@ -2,13 +2,18 @@
  * MAIN FUNCTIONS
  */
 
-/// Starts Moralis server
+/**
+ * Starts Moralis server
+ */
 Moralis.start({
   serverUrl: "https://pz3ac4aydbjr.usemoralis.com:2053/server",
   appId: "gcyGZTHHUSMv4th0e3mmky6eLcVrGCuXnvWPx2aO",
 });
-/// All information for adding networks
-/// ethereum, binance, polygon, avalanche
+
+/**
+ * All information for networks
+ * ethereum, binance, polygon, avalanche
+ */
 var networks = {
   "0x0": {
     token: "",
@@ -52,24 +57,34 @@ var networks = {
     gecko2: "avalanche-2",
   },
 };
-/// All ethers.js rpc providers
-/// eth, bnb, matic, avax
+
+/**
+ * Ethers.js rpc providers
+  * ethereum, binance, polygon, avalanche
+
+ */
 var providers = {
   "0x1": new ethers.providers.JsonRpcProvider(networks["0x1"].node),
   "0x38": new ethers.providers.JsonRpcProvider(networks["0x38"].node),
   "0x89": new ethers.providers.JsonRpcProvider(networks["0x89"].node),
   "0xa86a": new ethers.providers.JsonRpcProvider(networks["0xa86a"].node),
 };
-/// All web3.js objects
-/// eth, bnb, matic, arb, avax, fant, cro
+
+/**
+ * Web3.js objects
+ * ethereum, binance, polygon, avalanche
+ */
 var web3js = {
-  eth: new Web3(networks["0x1"].node),
-  bnb: new Web3(networks["0x38"].node),
-  matic: new Web3(networks["0x89"].node),
-  avax: new Web3(networks["0xa86a"].node),
+  "0x1": new Web3(networks["0x1"].node),
+  "0x38": new Web3(networks["0x38"].node),
+  "0x89": new Web3(networks["0x89"].node),
+  "0xa89a": new Web3(networks["0xa86a"].node),
 };
-/// ABIs, address', etc
-/// NOTE: current values are not used
+
+/**
+ * Params to use
+ * - none are currently used
+ */
 const params = {
   erc20abi: [
     {
@@ -809,7 +824,9 @@ const params = {
   ],
 };
 
-/// Login button
+/**
+ * Log in button
+ */
 var loggedIn = false;
 document.getElementById("login-btn").addEventListener("click", async () => {
   /// Logging in
@@ -830,9 +847,16 @@ document.getElementById("login-btn").addEventListener("click", async () => {
     }
   }
 });
-/// Gets the current Moralis user or asks user to sign message to sign in
+
+/**
+ * Gets the current Moralis user or asks the client to sign a message to
+ * sign in. Metamask or walletconnect
+ * @returns if the authentication was succesful and which account was used to sign in
+ */
 async function authenticate() {
   let user = Moralis.User.current();
+  let lastProvider = "metamask";
+
   if (!user) {
     // sign-in message
     let authRequest = {
@@ -843,16 +867,22 @@ async function authenticate() {
     if (window.ethereum) {
       if (!confirm("Use your metamask wallet?")) {
         authRequest.provider = "walletconnect";
+        lastProvider = "walletconnect";
       }
     }
     try {
       user = await Moralis.authenticate(authRequest);
+      await user.set("last_provider", lastProvider);
+      await user.save();
     } catch (e) {
       console.log("Failed to sign log in message");
       return [false, ""];
     }
   }
-  await Moralis.enableWeb3();
+  lastProvider == "metamask"
+    ? await Moralis.enableWeb3()
+    : await Moralis.enableWeb3({ provider: "walletconnect" });
+
   await setUserStats(user);
   console.log(
     "signed in user ",
@@ -861,7 +891,12 @@ async function authenticate() {
   );
   return [true, ethers.utils.getAddress(user.get("ethAddress"))];
 }
-/// Function to add a network to user's (mm only) wallet if not already
+
+/**
+ * Adds a network to a metamask wallet (browser only)
+ * @param {0x1, 0x89, 0xa89a, 0x38} _cId
+ * @returns if adding network was succesful
+ */
 async function addNetwork(_cId) {
   /// Only adds to metamask (not wallet connect)
   if (window.ethereum) {
@@ -885,7 +920,11 @@ async function addNetwork(_cId) {
     }
   }
 }
-/// App function that runs each refresh
+
+/**
+ * App function that runs on page load and
+ * token refreshes
+ */
 async function run() {
   let user = Moralis.User.current(); // current user
   let accounts = await getUserAccounts(user); // all user's accounts

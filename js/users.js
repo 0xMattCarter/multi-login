@@ -1,10 +1,10 @@
 /**
  * USER FUNCTIONS
- * email, username, linked accounts,
- * address groups, hidden contracts
  */
 
-/// Store a user's email in Moralis
+/**
+ * Stores a user's email in Moralis DB under 'email'
+ */
 submitEmail = async () => {
   /// Whats typed in email box
   let email = document.getElementById("email-input").value;
@@ -28,7 +28,9 @@ submitEmail = async () => {
   }
 };
 
-/// Store a user's username in Moralis
+/**
+ * Stores a user's username in Moralis DB under 'omni_username'
+ */
 submitUsername = async () => {
   /// Whats typed in box
   let username = document.getElementById("username-input").value;
@@ -61,7 +63,9 @@ submitUsername = async () => {
   }
 };
 
-/// Adds an account to a user's linked accounts in Moralis
+/**
+ * Links a new address to a user in Moralis DB under 'accounts'
+ */
 link = async (_account) => {
   if (confirm("Add " + _account + " to your account list?")) {
     try {
@@ -82,7 +86,9 @@ link = async (_account) => {
   }
 };
 
-/// Removes an account from a user's linked accounts in Moralis
+/**
+ * Unlinks an account from a user
+ */
 unlink = async (_account, _user) => {
   if (confirm("Remove " + _account + " from your account list?")) {
     await Moralis.unlink(_account);
@@ -93,7 +99,10 @@ unlink = async (_account, _user) => {
   }
 };
 
-/// Adds contract address to hide tokens from for a user in Moralis
+/**
+ * Adds a contract address to a user's hidden tokens in Moralis DB
+ * under 'hidden_tokens'
+ */
 hideContract = async (_address) => {
   if (confirm("Hide tokens from this contract address?\n" + _address)) {
     let user = Moralis.User.current();
@@ -109,7 +118,9 @@ hideContract = async (_address) => {
   }
 };
 
-/// Removes contract address to hide tokens from for a user in Moralis
+/**
+ * Removes a contract address from a users' hidden tokens
+ */
 unhideContract = async (_address) => {
   if (confirm("Un-hide tokens from this contract address?\n" + _address)) {
     let user = Moralis.User.current();
@@ -131,7 +142,9 @@ unhideContract = async (_address) => {
   }
 };
 
-/// Stores a group of addresses for a user in Moralis
+/**
+ * Adds an address group to a user in Moralis DB under 'address_groups'
+ */
 makeAddressGroup = async () => {
   let _groupName = document.getElementById("group-input").value;
   let sels = document.getElementsByClassName("group-checker");
@@ -158,7 +171,9 @@ makeAddressGroup = async () => {
   }
 };
 
-/// Removes a group of addresses for a user in Moralis
+/**
+ * Removes an address group from a user
+ */
 removeAddressGroup = async (_groupName, _addrs) => {
   if (confirm("Remove " + _groupName + " with " + _addrs + " ?")) {
     let user = Moralis.User.current();
@@ -181,7 +196,9 @@ removeAddressGroup = async (_groupName, _addrs) => {
   }
 };
 
-/// Get all user's linked accounts
+/**
+ * Get all user's linked accounts
+ */
 getUserAccounts = async (_user) => {
   if (_user) {
     let raw = await _user.get("accounts");
@@ -195,7 +212,9 @@ getUserAccounts = async (_user) => {
   }
 };
 
-/// Gets a user's: username, userId, email, linked accounts, and address groups
+/**
+ * Gets a user's: username, userId, email, linked addresses, and address groups
+ */
 getUserStats = async (_user) => {
   var username, uId, email, links, groups;
   if (!_user) {
@@ -218,10 +237,11 @@ getUserStats = async (_user) => {
     links: links,
     groups: groups,
   };
-  // return [username, uId, email, links, groups];
 };
 
-/// Sets a _user's: username, userId, email, links, groups
+/**
+ * Sets a user's: username, userId, email, linked addresses, and address groups
+ */
 setUserStats = async (_user) => {
   console.log("setting user details");
   /// Stats getter call

@@ -3,237 +3,259 @@
  */
 
 /**
- * Sets a user's tokens
- * _accounts An array of accounts
- * _chainIds An array of chainIds
- * _currency The currency to display results in
+ * Sets tokens for an array of accounts on an array of chainIds
+ * Displays values in _currency ('usd' | 'native')
  */
 setAccountTokens = async (_accounts, _chainIds, _currency) => {
-  console.log("setting user tokens");
   var user = Moralis.User.current();
-  const hidden = await user.get("hidden_tokens");
-  var usdTotal = 0.0;
-  var portfolioSum = "";
-
-  let nativeTokens = await moralisAccountNativeBalances(_accounts, _chainIds);
-  let tokens = await moralisAccountTokens(_accounts, _chainIds);
-
   let gallary20 = document.getElementById("erc20s-section");
   let gallary20Hidden = document.getElementById("hidden-erc20s-section");
   (gallary20.innerHTML = ""), (gallary20Hidden.innerHTML = "");
 
-  for (let j = 0; j < _chainIds.length; j++) {
-    var nativePrice = parseFloat(await getNativeInUsd(_chainIds[j])); // in usd
-    let nativeBalance = parseFloat(nativeTokens[_chainIds[j]]);
-    let nativeUsd = nativePrice * nativeBalance;
-    let drawnNative = drawNative(
-      networks[_chainIds[j]].name,
-      `${nativeBalance.toFixed(4)} ${
-        networks[_chainIds[j]].token
-      }\n$ ${nativeUsd.toFixed(2)}`
-    );
-    gallary20.appendChild(drawnNative);
-    usdTotal += nativeUsd;
-    /// Draw tokens
-    for (let i = 0; i < tokens[_chainIds[j]].erc20.tokens.length; i++) {
-      let tkn = tokens[_chainIds[j]].erc20.tokens[i];
-      let bal = tokens[_chainIds[j]].erc20.balances[tkn.token_address];
-      let usdPerTkn = 0.0;
-      let isHidden = true;
-      if (!hidden.includes(tkn.token_address)) {
-        usdPerTkn =
-          parseFloat(bal) *
-          parseFloat(await getTokenPriceInUsd(_chainIds[j], tkn.token_address));
-        isHidden = false;
-      }
+  /// Logged in
+  if (user) {
+    console.log("setting user tokens");
+    var usdTotal = 0.0;
+    var portfolioSum = "";
 
-      let nativePerToken = usdPerTkn / nativePrice;
-      let blockscan = `${networks[_chainIds[j]].blockExplorer}address/${
-        tkn.token_address
-      }`;
+    var hidden = await user.get("hidden_tokens");
+    hidden = hidden ? hidden : [];
 
-      let drawn20 = drawErc20(
-        tkn.name,
-        tkn.token_address,
-        bal.toFixed(3),
-        tkn.symbol,
-        blockscan,
-        _currency == "usd"
-          ? "$" + usdPerTkn.toFixed(2)
-          : nativePerToken.toFixed(4) + networks[_chainIds[j]].token,
-        isHidden
+    let nativeTokens = await moralisAccountNativeBalances(_accounts, _chainIds);
+    let tokens = await moralisAccountTokens(_accounts, _chainIds);
+
+    for (let j = 0; j < _chainIds.length; j++) {
+      var nativePrice = parseFloat(await getNativeInUsd(_chainIds[j])); // in usd
+      let nativeBalance = parseFloat(nativeTokens[_chainIds[j]]);
+      let nativeUsd = nativePrice * nativeBalance;
+      let drawnNative = drawNative(
+        networks[_chainIds[j]].name,
+        `${nativeBalance.toFixed(4)} ${
+          networks[_chainIds[j]].token
+        }\n$ ${nativeUsd.toFixed(2)}`
       );
+      gallary20.appendChild(drawnNative);
+      usdTotal += nativeUsd;
+      /// Draw tokens
+      for (let i = 0; i < tokens[_chainIds[j]].erc20.tokens.length; i++) {
+        let tkn = tokens[_chainIds[j]].erc20.tokens[i];
+        let bal = tokens[_chainIds[j]].erc20.balances[tkn.token_address];
+        let usdPerTkn = 0.0;
+        let isHidden = true;
+        if (!hidden.includes(tkn.token_address)) {
+          usdPerTkn =
+            parseFloat(bal) *
+            parseFloat(
+              await getTokenPriceInUsd(_chainIds[j], tkn.token_address)
+            );
+          isHidden = false;
+        }
 
-      usdTotal += usdPerTkn;
-      nativeBalance += nativePerToken;
+        let nativePerToken = usdPerTkn / nativePrice;
+        let blockscan = `${networks[_chainIds[j]].blockExplorer}address/${
+          tkn.token_address
+        }`;
 
-      isHidden
-        ? gallary20Hidden.appendChild(drawn20)
-        : gallary20.appendChild(drawn20);
+        let drawn20 = drawErc20(
+          tkn.name,
+          tkn.token_address,
+          bal.toFixed(3),
+          tkn.symbol,
+          blockscan,
+          _currency == "usd"
+            ? "$" + usdPerTkn.toFixed(2)
+            : nativePerToken.toFixed(4) + networks[_chainIds[j]].token,
+          isHidden
+        );
+
+        usdTotal += usdPerTkn;
+        nativeBalance += nativePerToken;
+
+        isHidden
+          ? gallary20Hidden.appendChild(drawn20)
+          : gallary20.appendChild(drawn20);
+      }
+      portfolioSum += `${nativeBalance.toFixed(4)} ${
+        networks[_chainIds[j]].token
+      }\n`;
     }
-    portfolioSum += `${nativeBalance.toFixed(4)} ${
-      networks[_chainIds[j]].token
-    }\n`;
+    /// Set summary
+    document.getElementById("tt2").innerText = portfolioSum;
+    document.getElementById("tt3").innerText = "$" + usdTotal.toFixed(2);
   }
-  /// Set summary
-  document.getElementById("tt2").innerText = portfolioSum;
-  document.getElementById("tt3").innerText = "$" + usdTotal.toFixed(2);
-
-  /// Draw hidden tokens
+  /// Logged out
+  else {
+    document.getElementById("tt2").innerText = "";
+    document.getElementById("tt3").innerText = "";
+  }
 };
 
 /**
- * Sets a user's nfts
- * _accounts An array of accounts
- * _chainIds An array of chainIds
- * _currency The currency to display results in
+ * Sets a user's nfts for an array of accounts on an array of chainIds
+ * Displays values in _currency ('usd' | 'native')
  */
 setAccountNfts = async (_accounts, _chainIds, _currency) => {
-  console.log("setting user nfts");
-
   let user = Moralis.User.current();
-  let hidden = await user.get("hidden_tokens");
-  let tokens = await moralisAccountNfts(_accounts, _chainIds);
+  let gallary721 = document.getElementById("erc721s-section"),
+    gallary721Hidden = document.getElementById("hidden-erc721s-section"),
+    gallary1155 = document.getElementById("erc1155s-section"),
+    gallary1155Hidden = document.getElementById("hidden-erc1155s-section");
 
-  let gallary721 = document.getElementById("erc721s-section");
-  let gallary721Hidden = document.getElementById("hidden-erc721s-section");
-  (gallary721.innerHTML = ""), (gallary721Hidden.innerHTML = "");
-  let gallary1155 = document.getElementById("erc1155s-section");
-  let gallary1155Hidden = document.getElementById("hidden-erc1155s-section");
-  (gallary1155.innerHTML = ""), (gallary1155Hidden.innerHTML = "");
+  (gallary721.innerHTML = ""),
+    (gallary721Hidden.innerHTML = ""),
+    (gallary1155.innerHTML = ""),
+    (gallary1155Hidden.innerHTML = "");
 
-  var usdTotal = 0.0;
-  var portfolioSum = "";
+  if (user) {
+    console.log("setting user nfts");
+    var hidden = await user.get("hidden_tokens");
+    hidden = hidden ? hidden : [];
+    var tokens = await moralisAccountNfts(_accounts, _chainIds);
 
-  for (let j = 0; j < _chainIds.length; j++) {
-    var nativePrice = parseFloat(await getNativeInUsd(_chainIds[j])); // in usd
-    var nativeBalance = 0.0;
-    for (let i = 0; i < tokens[_chainIds[j]].erc721.tokens.length; i++) {
-      let tkn = tokens[_chainIds[j]].erc721.tokens[i];
-      let metadata = JSON.parse(tkn.metadata);
-      let floor = "floor";
-      let last = "last";
-      let gain = "gain";
-      let isHidden = true;
-      let blockscan = `${networks[_chainIds[j]].blockExplorer}address/${
-        tkn.token_address
-      }`;
-      if (!hidden.includes(tkn.token_address)) {
-        let tokenomics = await moralisNftTokenomics(
+    var usdTotal = 0.0;
+    var portfolioSum = "";
+
+    for (let j = 0; j < _chainIds.length; j++) {
+      var nativePrice = parseFloat(await getNativeInUsd(_chainIds[j])); // in usd
+      var nativeBalance = 0.0;
+      for (let i = 0; i < tokens[_chainIds[j]].erc721.tokens.length; i++) {
+        let tkn = tokens[_chainIds[j]].erc721.tokens[i];
+        let metadata = JSON.parse(tkn.metadata);
+        let floor = "floor";
+        let last = "last";
+        let gain = "gain";
+        let isHidden = true;
+        let blockscan = `${networks[_chainIds[j]].blockExplorer}address/${
+          tkn.token_address
+        }`;
+        if (!hidden.includes(tkn.token_address)) {
+          let tokenomics = await moralisNftTokenomics(
+            tkn.token_address,
+            tkn.token_id,
+            _chainIds[j]
+          );
+
+          usdFloor = parseFloat(tokenomics.floor) * nativePrice;
+          usdLast = parseFloat(tokenomics.last) * nativePrice;
+          usdGain = parseFloat(tokenomics.gain) * nativePrice;
+
+          floor =
+            _currency == "usd"
+              ? `$${usdFloor.toFixed(2)}`
+              : `${tokenomics.floor.toFixed(3)} ${
+                  networks[_chainIds[j]].token
+                }`;
+          last =
+            _currency == "usd"
+              ? `$${usdLast.toFixed(2)}`
+              : `${tokenomics.last.toFixed(3)} ${networks[_chainIds[j]].token}`;
+          gain =
+            _currency == "usd"
+              ? `$${usdGain.toFixed(2)}`
+              : `${tokenomics.gain.toFixed(3)} ${networks[_chainIds[j]].token}`;
+          isHidden = false;
+          usdTotal += usdFloor;
+          nativeBalance += parseFloat(tokenomics.floor);
+        }
+
+        let drawn721 = drawErc721(
+          tkn.name,
           tkn.token_address,
           tkn.token_id,
-          _chainIds[j]
+          metadata,
+          blockscan,
+          "Floor: " + floor,
+          "Last: " + last,
+          "Gain: " + gain,
+          isHidden
         );
 
-        usdFloor = parseFloat(tokenomics.floor) * nativePrice;
-        usdLast = parseFloat(tokenomics.last) * nativePrice;
-        usdGain = parseFloat(tokenomics.gain) * nativePrice;
-
-        floor =
-          _currency == "usd"
-            ? `$${usdFloor.toFixed(2)}`
-            : `${tokenomics.floor.toFixed(3)} ${networks[_chainIds[j]].token}`;
-        last =
-          _currency == "usd"
-            ? `$${usdLast.toFixed(2)}`
-            : `${tokenomics.last.toFixed(3)} ${networks[_chainIds[j]].token}`;
-        gain =
-          _currency == "usd"
-            ? `$${usdGain.toFixed(2)}`
-            : `${tokenomics.gain.toFixed(3)} ${networks[_chainIds[j]].token}`;
-        isHidden = false;
-        usdTotal += usdFloor;
-        nativeBalance += parseFloat(tokenomics.floor);
+        isHidden
+          ? gallary721Hidden.appendChild(drawn721)
+          : gallary721.appendChild(drawn721);
       }
 
-      let drawn721 = drawErc721(
-        tkn.name,
-        tkn.token_address,
-        tkn.token_id,
-        metadata,
-        blockscan,
-        "Floor: " + floor,
-        "Gain: " + gain,
-        isHidden
-      );
+      for (let i = 0; i < tokens[_chainIds[j]].erc1155.tokens.length; i++) {
+        let tkn = tokens[_chainIds[j]].erc1155.tokens[i];
+        let bal = parseInt(
+          tokens[_chainIds[j]].erc1155.balances[
+            tkn.token_address + tkn.token_id
+          ]
+        );
+        let metadata = JSON.parse(tkn.metadata);
+        let floor = "floor";
+        let last = "last";
+        let gain = "gain";
+        let isHidden = true;
+        let blockscan = `${networks[_chainIds[j]].blockExplorer}address/${
+          tkn.token_address
+        }`;
+        if (!hidden.includes(tkn.token_address)) {
+          let tokenomics = await moralisNftTokenomics(
+            tkn.token_address,
+            tkn.token_id,
+            _chainIds[j]
+          );
 
-      isHidden
-        ? gallary721Hidden.appendChild(drawn721)
-        : gallary721.appendChild(drawn721);
-    }
+          usdFloor = parseFloat(tokenomics.floor) * nativePrice;
+          usdLast = parseFloat(tokenomics.last) * nativePrice;
+          usdGain = parseFloat(tokenomics.gain) * nativePrice;
 
-    for (let i = 0; i < tokens[_chainIds[j]].erc1155.tokens.length; i++) {
-      let tkn = tokens[_chainIds[j]].erc1155.tokens[i];
-      let bal = parseInt(
-        tokens[_chainIds[j]].erc1155.balances[tkn.token_address + tkn.token_id]
-      );
-      let metadata = JSON.parse(tkn.metadata);
-      let floor = "floor";
-      let last = "last";
-      let gain = "gain";
-      let isHidden = true;
-      let blockscan = `${networks[_chainIds[j]].blockExplorer}address/${
-        tkn.token_address
-      }`;
-      if (!hidden.includes(tkn.token_address)) {
-        let tokenomics = await moralisNftTokenomics(
+          floor =
+            _currency == "usd"
+              ? `$${usdFloor.toFixed(2)}`
+              : `${tokenomics.floor.toFixed(3)} ${
+                  networks[_chainIds[j]].token
+                }`;
+          last =
+            _currency == "usd"
+              ? `$${usdLast.toFixed(2)}`
+              : `${tokenomics.last.toFixed(3)} ${networks[_chainIds[j]].token}`;
+          gain =
+            _currency == "usd"
+              ? `$${usdGain.toFixed(2)}`
+              : `${tokenomics.gain.toFixed(3)} ${networks[_chainIds[j]].token}`;
+          isHidden = false;
+          usdTotal += usdFloor;
+          nativeBalance += parseFloat(tokenomics.floor);
+        }
+
+        let drawn1155 = await drawErc1155(
+          tkn.name,
           tkn.token_address,
-          tkn.token_id,
-          _chainIds[j]
+          "#" + tkn.token_id,
+          "x" + bal,
+          metadata,
+          blockscan,
+          "Floor: " + floor,
+          "Last: " + last,
+          "Gain: " + gain,
+          isHidden
         );
 
-        usdFloor = parseFloat(tokenomics.floor) * nativePrice;
-        usdLast = parseFloat(tokenomics.last) * nativePrice;
-        usdGain = parseFloat(tokenomics.gain) * nativePrice;
-
-        floor =
-          _currency == "usd"
-            ? `$${usdFloor.toFixed(2)}`
-            : `${tokenomics.floor.toFixed(3)} ${networks[_chainIds[j]].token}`;
-        last =
-          _currency == "usd"
-            ? `$${usdLast.toFixed(2)}`
-            : `${tokenomics.last.toFixed(3)} ${networks[_chainIds[j]].token}`;
-        gain =
-          _currency == "usd"
-            ? `$${usdGain.toFixed(2)}`
-            : `${tokenomics.gain.toFixed(3)} ${networks[_chainIds[j]].token}`;
-        isHidden = false;
-        usdTotal += usdFloor;
-        nativeBalance += parseFloat(tokenomics.floor);
+        isHidden
+          ? gallary1155Hidden.appendChild(drawn1155)
+          : gallary1155.appendChild(drawn1155);
       }
 
-      let drawn1155 = await drawErc1155(
-        tkn.name,
-        tkn.token_address,
-        "#" + tkn.token_id,
-        "x" + bal,
-        metadata,
-        blockscan,
-        "Floor: " + floor,
-        "Gain: " + gain,
-        isHidden
-      );
-
-      isHidden
-        ? gallary1155Hidden.appendChild(drawn1155)
-        : gallary1155.appendChild(drawn1155);
+      portfolioSum += `${nativeBalance.toFixed(4)} ${
+        networks[_chainIds[j]].token
+      }\n`;
     }
-
-    portfolioSum += `${nativeBalance.toFixed(4)} ${
-      networks[_chainIds[j]].token
-    }\n`;
+    /// Set summary
+    document.getElementById("ttt2").innerText = portfolioSum;
+    document.getElementById("ttt3").innerText = "$" + usdTotal.toFixed(2);
   }
-  /// Set summary
-
-  document.getElementById("ttt2").innerText = portfolioSum;
-  document.getElementById("ttt3").innerText = "$" + usdTotal.toFixed(2);
-
-  /// Draw each erc721
-  /// Draw each erc1155
+  /// Logged out
+  else {
+    document.getElementById("ttt2").innerText = "";
+    document.getElementById("ttt3").innerText = "";
+  }
 };
 
-/// HTML Drawing functions
+/**
+ * Draw html for a native token balance (eth, matic, avax, bnb)
+ */
 drawNative = (_name, _balance) => {
   let el = document.createElement("div"),
     name = document.createElement("div"),
@@ -249,6 +271,10 @@ drawNative = (_name, _balance) => {
 
   return el;
 };
+
+/**
+ * Draw html for a token balance (erc20s)
+ */
 drawErc20 = (
   _name,
   _address,
@@ -296,6 +322,10 @@ drawErc20 = (
 
   return n;
 };
+
+/**
+ * Draw html for an nft (erc721)
+ */
 drawErc721 = (
   _name,
   _address,
@@ -304,6 +334,7 @@ drawErc721 = (
   _blockscan,
   _floor,
   _gain,
+  _last,
   _isHidden
 ) => {
   let n = document.createElement("div"),
@@ -311,7 +342,7 @@ drawErc721 = (
     name = document.createElement("div"),
     floor = document.createElement("div"),
     id = document.createElement("div"),
-    // lastSaleDiv = document.createElement("div"),
+    lastSaleDiv = document.createElement("div"),
     gainDiv = document.createElement("div"),
     addr = document.createElement("a"),
     btn = document.createElement("button");
@@ -325,7 +356,7 @@ drawErc721 = (
   name.innerText = _name;
   addr.innerText = shrinkAddr(_address);
   floor.innerText = _floor;
-  // lastSaleDiv.innerText = theLastSale;
+  lastSaleDiv.innerText = _last;
   gainDiv.innerText = _gain;
 
   if (_name == "Ethereum Name Service") {
@@ -334,16 +365,20 @@ drawErc721 = (
   } else {
     id.innerText = "#" + _tokenId;
     if (_metadata.image) {
-      if (_metadata.image.substring(0, 7) == "ipfs://") {
-        img.setAttribute(
-          "src",
-          _metadata.image.replace(
-            "ipfs://",
-            "https://nftsource.mypinata.cloud/ipfs/"
-          )
-        );
-      } else {
-        img.setAttribute("src", _metadata.image);
+      try {
+        if (_metadata.image.substring(0, 7) == "ipfs://") {
+          img.setAttribute(
+            "src",
+            _metadata.image.replace(
+              "ipfs://",
+              "https://nftsource.mypinata.cloud/ipfs/"
+            )
+          );
+        } else {
+          img.setAttribute("src", _metadata.image);
+        }
+      } catch (error) {
+        img.setAttribute("src", "images/bayc.png");
       }
     } else {
       /// no metadata
@@ -366,10 +401,15 @@ drawErc721 = (
   n.appendChild(img), n.appendChild(name), n.appendChild(id);
   if (!_isHidden) n.appendChild(floor);
   if (!_isHidden) n.appendChild(gainDiv);
+  if (!_isHidden) n.appendChild(lastSaleDiv);
   n.appendChild(addr), n.appendChild(btn);
 
   return n;
 };
+
+/**
+ * Draw html for an nft (erc1155)
+ */
 drawErc1155 = async (
   _name,
   _address,
@@ -379,6 +419,7 @@ drawErc1155 = async (
   _blockscan,
   _floor,
   _gain,
+  _last,
   _isHidden
 ) => {
   let n = document.createElement("div"),
@@ -387,7 +428,7 @@ drawErc1155 = async (
     floor = document.createElement("div"),
     id = document.createElement("div"),
     balance = document.createElement("div"),
-    // lastSaleDiv = document.createElement("div"),
+    lastSaleDiv = document.createElement("div"),
     gainDiv = document.createElement("div"),
     addr = document.createElement("a"),
     btn = document.createElement("button");
@@ -403,7 +444,7 @@ drawErc1155 = async (
   addr.innerText = shrinkAddr(_address);
   balance.innerText = _balance;
   floor.innerText = _floor;
-  //   lastSaleDiv.innerText = theLastSale;
+  lastSaleDiv.innerText = _last;
   gainDiv.innerText = _gain;
   id.innerText = _tokenId.length > 8 ? shrinkAddr(_tokenId) : _tokenId;
 
@@ -418,17 +459,6 @@ drawErc1155 = async (
       unhideContract(_address);
     };
   }
-
-  // let hexx = tokenToJson(_tokenId);
-  // if (_uri.includes("{}")) {
-  //   _uri = _uri.replace("{}", hexx);
-  // } else if (_uri.includes("{id}")) {
-  //   _uri = _uri.replace("{id}", hexx);
-  // }
-
-  // try {
-  //   await fetch(_uri);
-  //   $.getJSON(_uri, function (_metadata) {
 
   if (_metadata) {
     if (_metadata.image) {
@@ -453,8 +483,9 @@ drawErc1155 = async (
     n.appendChild(id),
     n.appendChild(balance);
   if (!_isHidden) n.appendChild(floor);
-  // n.appendChild(lastSaleDiv),
   if (!_isHidden) n.appendChild(gainDiv);
+  if (!_isHidden) n.appendChild(lastSaleDiv);
+  // n.appendChild(lastSaleDiv),
   n.appendChild(addr), n.appendChild(btn);
 
   return n;

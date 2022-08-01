@@ -1,11 +1,11 @@
 /**
  * UTILITY FUNCTIONS
- * Convert decimal tokenId to json hex format
- * Shrink a string (address) to first 6 chars and last 4
- * Creates contract instances using ethers.js
  */
 
-/// Converts decimal tokenId -> hex 1155 json format (64 padded 0s)
+/**
+ * Converts a decimal tokenId into the 64 0s padded json format
+ * (for 1155 token that contain {id} in their URIs)
+ */
 tokenToJson = (tokenId) => {
   let dec = ethers.BigNumber.from(tokenId);
   let hex = dec.toHexString();
@@ -18,7 +18,9 @@ tokenToJson = (tokenId) => {
   return padded;
 };
 
-/// Shrinks address to 0xabcd...1234 format
+/**
+ * Shrinks an an address to 0xabcd...1234 format
+ */
 shrinkAddr = (_addr) => {
   return (
     _addr.substring(0, 6) +
@@ -27,7 +29,9 @@ shrinkAddr = (_addr) => {
   );
 };
 
-/// Returns ethers.js contract instances
+/**
+ * Returns a contract instance using ethers.js
+ */
 getContractInstance = (_addr, _abi, _chainId) => {
   return new ethers.Contract(_addr, _abi, providers[_chainId]);
 };

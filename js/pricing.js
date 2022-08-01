@@ -1,9 +1,11 @@
 /**
  * PRICING FUNCTIONS
- * Uses the coingecko api to get the prices of network currencies and erc20 tokens
+ * Uses the coingecko api
  */
 
-/// Gets the price of 1 eth | matic | bnb | avax in USD
+/**
+ * Gets the price in usd for 1 eth, matic, bnb, or avax
+ */
 getNativeInUsd = async (_chainId) => {
   let string =
     "https://api.coingecko.com/api/v3/simple/price?ids=" +
@@ -14,7 +16,9 @@ getNativeInUsd = async (_chainId) => {
   return usd;
 };
 
-/// Gets the price of 1 erc20 token in USD
+/**
+ * Gets the price in usd for 1 erc20 token
+ */
 getTokenPriceInUsd = async (_chainId, _tokenAddress) => {
   try {
     let string =
