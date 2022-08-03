@@ -41,7 +41,6 @@ Moralis.Cloud.define("isUsernameUnique", async (params) => {
 Moralis.Cloud.define("isAccountLinked", async (params) => {
   const userQuery = new Moralis.Query("User");
   const results = await userQuery.find({ useMasterKey: true });
-  let ret = false;
 
   for (let i = 0; i < results.length; i++) {
     let res = results[i];

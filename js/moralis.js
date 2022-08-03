@@ -222,36 +222,33 @@ moralisNftTokenomics = async (_contractAddress, _tId, _cId) => {
 };
 
 /**
- * Subscribe to metamask account change event. When an address changes
- * if the new address is not already linked, an element will show giving the option to use this address
- * automatically
+ * Adds a network to a metamask wallet (browser only) then switches to it
+ * @param {'0x1', '0x89', '0xa89a', '0x38'} _cId
+ * @returns if adding network was succesful
  */
-// Moralis.onAccountChanged(async (_account) => {
-//   console.log()
-//   let user = Moralis.User.current();
-//   if (user) {
-//     let lastProvider = await user.get("last_provider");
-//     /// Moralis.link only works with metamask (browser)
-//     if (lastProvider == "metamask" || lastProvider == "walletconnect") {
-//       console.log("account swap");
-//       /// Normalize to checksum
-//       _account = ethers.utils.getAddress(_account);
-//       let accounts = await getUserAccounts(Moralis.User.current());
-//       document.getElementById("possible-link").innerHTML = "";
-//       /// If the user has not linked this account yet
-//       if (!accounts.includes(_account)) {
-//         let el = document.createElement("div"),
-//           addr = document.createElement("div"),
-//           btn = document.createElement("button");
-//         addr.innerText = shrinkAddr(_account);
-//         btn.innerText = "add";
-//         el.classList.add("link-special"), btn.classList.add("link-btn-special");
-//         btn.onclick = () => {
-//           superLink(lastProvider);
-//         };
-//         el.appendChild(addr), el.appendChild(btn);
-//         document.getElementById("possible-link").appendChild(el);
-//       }
-//     }
-//   }
-// });
+async function addNetworkToMetamask(_cId) {
+  /// Only adds to metamask (not wallet connect)
+  if (window.ethereum) {
+    try {
+      let ntk = networks[_cId];
+      /// Reconnect to metamask
+      await Moralis.enableWeb3({ provider: "metamask" });
+      /// Add network to metamask using Moralis
+      await Moralis.addNetwork(
+        _cId,
+        ntk.name,
+        ntk.token,
+        ntk.token,
+        ntk.rpc,
+        ntk.blockExplorer
+      );
+      /// Switch to the new network
+      await Moralis.switchNetwork(_cId);
+      console.log("added network to metamask");
+      return true;
+    } catch (error) {
+      console.log("failed to add network to metamask", error);
+      return false;
+    }
+  }
+}

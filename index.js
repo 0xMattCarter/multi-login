@@ -33,7 +33,7 @@ var networks = {
     token: "BNB",
     name: "Binance",
     node: "https://speedy-nodes-nyc.moralis.io/9421d0a1c5f491ee048b60d9/bsc/mainnet",
-    rpc: " https://bsc-dataseed.binance.org/",
+    rpc: "https://bsc-dataseed.binance.org/",
     blockExplorer: "https://bscscan.com/",
     gecko: "binance-smart-chain",
     gecko2: "binancecoin",
@@ -831,8 +831,7 @@ var loggedIn = false;
 document.getElementById("login-btn").addEventListener("click", async () => {
   /// Logging in
   if (!loggedIn) {
-    let k = await authenticate();
-    if (k[0]) {
+    if (await authenticate()) {
       loggedIn = true;
       await run();
     }
@@ -855,35 +854,36 @@ document.getElementById("login-btn").addEventListener("click", async () => {
  */
 async function authenticate() {
   let user = Moralis.User.current();
-  let lastProvider = "metamask";
-
-  if (!user) {
-    // sign-in message
+  let lastProvider = "";
+  /// User remembered
+  if (user) {
+    lastProvider = user.get("last_provider");
+  }
+  /// Signing in
+  else if (!user) {
     let authRequest = {
       signingMessage: "Sign this message to log in",
       chain: "0x1",
     };
-    // use wallet connect ?
+    /// Check to use metamask or wallet connect if mm is available
     if (window.ethereum) {
       if (!confirm("Use your metamask wallet?")) {
         authRequest.provider = "walletconnect";
         lastProvider = "walletconnect";
       }
     }
+    /// Ask user to sign login message
     try {
       user = await Moralis.authenticate(authRequest);
-      await user.set("last_provider", lastProvider);
+      user.set("last_provider", lastProvider);
       await user.save();
     } catch (e) {
       console.log("Failed to sign log in message");
-      return [false, ""];
+      return false;
     }
   }
-  if (lastProvider == "metamask") {
-    await Moralis.enableWeb3();
-  } else {
-    await Moralis.enableWeb3({ provider: "walletconnect" });
-  }
+
+  await Moralis.enableWeb3({ provider: lastProvider });
 
   console.log(
     "signed in user ",
@@ -893,39 +893,7 @@ async function authenticate() {
     )}`
   );
   await setUserStats(user);
-  return [
-    true,
-    ethers.utils.getAddress(ethers.utils.getAddress(user.get("ethAddress"))),
-  ];
-}
-
-/**
- * Adds a network to a metamask wallet (browser only)
- * @param {0x1, 0x89, 0xa89a, 0x38} _cId
- * @returns if adding network was succesful
- */
-async function addNetwork(_cId) {
-  /// Only adds to metamask (not wallet connect)
-  if (window.ethereum) {
-    try {
-      let ntk = networks[_cId];
-      await Moralis.addNetwork(
-        _cId,
-        ntk.name,
-        ntk.token,
-        ntk.token,
-        ntk.rpc,
-        ntk.blockExplorer
-      );
-      /// switch to network if Moralis.addnetork() doesnt already
-      await Moralis.switchNetwork(_cId);
-      console.log("added network to metamask");
-      return true;
-    } catch (error) {
-      console.log("failed to add network to metamask", error);
-      return false;
-    }
-  }
+  return true;
 }
 
 /**
@@ -970,64 +938,3 @@ async function run() {
   await setAccountNfts(accounts, chainId, currencySel);
   console.log("session finished");
 }
-
-/**
- * CONTRACT WRITE EXAMPLES
- */
-
-// async function mint(amount) {
-//   var price, cost, writer;
-//   if (!signer) {
-//     if (confirm("Sign in first ?")) {
-//       await signIn("metamask");
-//     } else {
-//       return;
-//     }
-//   }
-//   let nftContract = getContractInstance(
-//     params.nftAddr,
-//     params.nftAbi,
-//     provider
-//   );
-//   (price = await nftContract.price()), (cost = price.mul(amount));
-//   let ethAmount = ethers.utils.formatUnits(cost, 18);
-//   writer = nftContract.connect(signer);
-//   if (confirm("Mint " + amount + " tokens for " + ethAmount + " eth")) {
-//     try {
-//       let tx = await writer.mintAccessToken(amount, { value: cost });
-//       await tx.wait();
-//       alert(
-//         "Your transaction is finished\nCheck it out at goerli.etherscan.com/" +
-//           tx.hash
-//       );
-//       await setStats();
-//     } catch (error) {
-//       return;
-//     }
-//   } else {
-//     return;
-//   }
-// }
-// start by using chain of wallet or mainnet
-// when checking out, we will make network changes per aggrogated txn
-//  let x = console.log(x);
-//   const signer = provider.getSigner();
-//   console.log(signer);
-//   let block = await provider.getBlockNumber();
-//   let bal = await provider.getBalance(x);
-//   let myBN = ethers.BigNumber.from("42");
-//   let bnTest = bal.mul(myBN);
-//   console.log(block, bal, myBN, bnTest.toString());
-//   let nftContract = getContractInstance(
-//     params.nftAddr,
-//     params.nftAbi,
-//     provider
-//   );
-//   let price = await nftContract.price();
-//   let amount = 2;
-//   let cost = price.mul(amount);
-//   console.log(bal, cost);
-//   let write = nftContract.connect(signer);
-//   let tx = await write.mintAccessToken(amount, { value: cost });
-//   console.log(cost, cost.toString(), tx, "rec", tx.hash);
-// }
