@@ -879,17 +879,24 @@ async function authenticate() {
       return [false, ""];
     }
   }
-  lastProvider == "metamask"
-    ? await Moralis.enableWeb3()
-    : await Moralis.enableWeb3({ provider: "walletconnect" });
+  if (lastProvider == "metamask") {
+    await Moralis.enableWeb3();
+  } else {
+    await Moralis.enableWeb3({ provider: "walletconnect" });
+  }
 
-  await setUserStats(user);
   console.log(
     "signed in user ",
     user,
-    `with ${ethers.utils.getAddress(user.get("ethAddress"))}`
+    `with ${ethers.utils.getAddress(
+      ethers.utils.getAddress(user.get("ethAddress"))
+    )}`
   );
-  return [true, ethers.utils.getAddress(user.get("ethAddress"))];
+  await setUserStats(user);
+  return [
+    true,
+    ethers.utils.getAddress(ethers.utils.getAddress(user.get("ethAddress"))),
+  ];
 }
 
 /**
@@ -933,7 +940,7 @@ async function run() {
   /// Change login btn text
   if (loggedIn) {
     document.getElementById("login-btn").innerText = shrinkAddr(
-      user.get("ethAddress")
+      ethers.utils.getAddress(user.get("ethAddress"))
     );
     /// Which chain(s) ?
     let chainSel = document.getElementById("chain-selector").value;

@@ -11,7 +11,7 @@
  */
 Moralis.settings.setAPIRateLimit({
   anonymous: 100,
-  authenticated: 200,
+  authenticated: 250,
   windowMs: 60000,
 });
 
@@ -32,4 +32,26 @@ Moralis.Cloud.define("isUsernameUnique", async (params) => {
     }
   }
   return true;
+});
+
+/**
+ * Checks DB to see if potential address is already linked to any users
+ * Addr must be lowercase (not checksummed)
+ */
+Moralis.Cloud.define("isAccountLinked", async (params) => {
+  const userQuery = new Moralis.Query("User");
+  const results = await userQuery.find({ useMasterKey: true });
+  let ret = false;
+
+  for (let i = 0; i < results.length; i++) {
+    let res = results[i];
+    let accountArrays = res.attributes.accounts;
+    /// See if addr is found
+    if (accountArrays) {
+      if (accountArrays.includes(params.params.addr)) {
+        return true;
+      }
+    }
+  }
+  return false;
 });

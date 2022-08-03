@@ -22,11 +22,19 @@ tokenToJson = (tokenId) => {
  * Shrinks an an address to 0xabcd...1234 format
  */
 shrinkAddr = (_addr) => {
-  return (
-    _addr.substring(0, 6) +
-    "..." +
-    _addr.substring(_addr.length - 4, _addr.length)
-  );
+  if (!_addr) {
+    return "";
+  } else {
+    if (_addr.length > 10) {
+      return (
+        _addr.substring(0, 6) +
+        "..." +
+        _addr.substring(_addr.length - 4, _addr.length)
+      );
+    } else {
+      return _addr;
+    }
+  }
 };
 
 /**

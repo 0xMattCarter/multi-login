@@ -222,33 +222,36 @@ moralisNftTokenomics = async (_contractAddress, _tId, _cId) => {
 };
 
 /**
- * Subscribe to metamask account change event
+ * Subscribe to metamask account change event. When an address changes
+ * if the new address is not already linked, an element will show giving the option to use this address
+ * automatically
  */
-Moralis.onAccountChanged(async (_account) => {
-  let user = Moralis.User.current();
-  if (user) {
-    let lastProvider = await user.get("last_provider");
-    /// Moralis.link only works with metamask (browser)
-    if (lastProvider == "metamask") {
-      console.log("account swap");
-      /// Normalize to checksum
-      _account = ethers.utils.getAddress(_account);
-      let accounts = await getUserAccounts(Moralis.User.current());
-      document.getElementById("possible-link").innerHTML = "";
-      /// If the user has not linked this account yet
-      if (!accounts.includes(_account)) {
-        let el = document.createElement("div"),
-          addr = document.createElement("div"),
-          btn = document.createElement("button");
-        addr.innerText = shrinkAddr(_account);
-        btn.innerText = "add";
-        el.classList.add("link-special"), btn.classList.add("link-btn-special");
-        btn.onclick = () => {
-          link(_account);
-        };
-        el.appendChild(addr), el.appendChild(btn);
-        document.getElementById("possible-link").appendChild(el);
-      }
-    }
-  }
-});
+// Moralis.onAccountChanged(async (_account) => {
+//   console.log()
+//   let user = Moralis.User.current();
+//   if (user) {
+//     let lastProvider = await user.get("last_provider");
+//     /// Moralis.link only works with metamask (browser)
+//     if (lastProvider == "metamask" || lastProvider == "walletconnect") {
+//       console.log("account swap");
+//       /// Normalize to checksum
+//       _account = ethers.utils.getAddress(_account);
+//       let accounts = await getUserAccounts(Moralis.User.current());
+//       document.getElementById("possible-link").innerHTML = "";
+//       /// If the user has not linked this account yet
+//       if (!accounts.includes(_account)) {
+//         let el = document.createElement("div"),
+//           addr = document.createElement("div"),
+//           btn = document.createElement("button");
+//         addr.innerText = shrinkAddr(_account);
+//         btn.innerText = "add";
+//         el.classList.add("link-special"), btn.classList.add("link-btn-special");
+//         btn.onclick = () => {
+//           superLink(lastProvider);
+//         };
+//         el.appendChild(addr), el.appendChild(btn);
+//         document.getElementById("possible-link").appendChild(el);
+//       }
+//     }
+//   }
+// });

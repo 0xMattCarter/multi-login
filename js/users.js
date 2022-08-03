@@ -64,25 +64,51 @@ submitUsername = async () => {
 };
 
 /**
- * Links a new address to a user in Moralis DB under 'accounts'
+ * Function to manually add new address to user with metamask or walletconnect.
+ * Connects to the wallet and uses the default (1st) account selected to link.
+ * This means a user will need to change to the account in mm or wc and then superLink
  */
-link = async (_account) => {
-  if (confirm("Add " + _account + " to your account list?")) {
-    try {
-      await Moralis.link(_account);
-      await Moralis.enableWeb3();
-      document.getElementById("possible-link").innerHTML = "";
-    } catch (error) {
-      alert(
-        "There was an error linking this address to your account. It may already have an account with us."
-      );
-      console.log(error);
-      document.getElementById("possible-link").innerHTML = "";
+superLink = async (_type) => {
+  try {
+    /// Reconnect to provider
+    await Moralis.enableWeb3({ provider: _type });
+    /// Get address to link
+    let provider = Moralis.provider;
+    let address = "";
+    if (_type == "metamask") {
+      address = provider.selectedAddress;
+    } else if (_type == "walletconnect") {
+      address = provider.accounts[0];
     }
-
-    console.log(_account + " added to account list");
+    /// Check if the new address is already linked
+    let links = await getUserAccounts(Moralis.User.current());
+    if (links.includes(ethers.utils.getAddress(address))) {
+      alert(
+        `This address (${shrinkAddr(
+          address
+        )}) is already linked to your account`
+      );
+      return;
+    }
+    /// Check if any other user's have this address linked
+    let copyLower = address.toLowerCase();
+    if (await Moralis.Cloud.run("isAccountLinked", { addr: copyLower })) {
+      alert(
+        `This address (${shrinkAddr(
+          address
+        )}) is already linked to another account`
+      );
+      return;
+    }
+    /// Link the account
+    await Moralis.link(address, {
+      signingMessage: "Sign this message to link this address to your account",
+      provider: _type,
+    });
     await setUserStats(Moralis.User.current());
     await run();
+  } catch (error) {
+    console.log("failed to link address");
   }
 };
 
@@ -90,12 +116,157 @@ link = async (_account) => {
  * Unlinks an account from a user
  */
 unlink = async (_account, _user) => {
-  if (confirm("Remove " + _account + " from your account list?")) {
-    await Moralis.unlink(_account);
-    console.log(_account + " removed from account list");
-    await setUserStats(Moralis.User.current());
-    await run();
-    // set network stats again
+  ///
+  let links = await getUserAccounts(_user);
+  if ((links.length == 1) & (links[0] == _account)) {
+    alert("You cannot remove your only address. Please connect another first");
+    return;
+  } else {
+    let og = _user.get("address_groups");
+    og = og ? og : {};
+    var groups = JSON.parse(JSON.stringify(og)); /// Copies object to new var
+    groups ? groups : {};
+    var groupsToChange = [];
+
+    for (let group in groups) {
+      if (groups[group].includes(_account)) {
+        groupsToChange.push(group);
+      }
+    }
+    let msg = "";
+    if (groupsToChange.length > 0) {
+      msg += "This will effect the following address groups\n\n";
+      for (let i = 0; i < groupsToChange.length; i++) {
+        msg += groupsToChange[i] + "\n";
+      }
+    }
+
+    /// Confirm this is ok
+    msg = `Are you sure you want to unlink ${shrinkAddr(
+      _account
+    )} from your account?\n${msg}`;
+    if (confirm(msg)) {
+      /// Remove account from groups
+      await wipeFromAddressGroups([_account], _user);
+      /// Remove account from user links
+      await Moralis.unlink(_account);
+      await setUserStats(_user);
+      await run();
+    }
+  }
+};
+
+/**
+ * Reads page to get information then
+ * adds an address group to a user in Moralis DB under 'address_groups'
+ */
+makeAddressGroup = async () => {
+  let _groupName = document.getElementById("group-input").value;
+  let sels = document.getElementsByClassName("group-checker");
+  _addresses = [];
+  _shortHand = "\n";
+
+  for (let i = 0; i < sels.length; i++) {
+    if (sels[i].checked) {
+      _addresses.push(sels[i].value);
+      _shortHand += shrinkAddr(sels[i].value) + "\n";
+    }
+  }
+
+  if (confirm("Create " + _groupName + " with:\n" + _shortHand + " ?")) {
+    let user = Moralis.User.current();
+    if (user) {
+      await addToAddressGroup(_addresses, _groupName, user);
+
+      await setUserStats(user);
+      await run();
+    }
+  }
+};
+
+/**
+ * Adds an array of accounts to a users address group in moralis db, creates the group if it does not exist
+ */
+addToAddressGroup = async (_addrs, _group, _user) => {
+  let dbGroups = _user.get("address_groups");
+  dbGroups = dbGroups == undefined ? {} : dbGroups;
+  if (dbGroups[_group]) {
+    for (let i = 0; i < _addrs.length; i++) {
+      if (!dbGroups[_group].includes(_addrs[i])) {
+        dbGroups[_group].push(_addrs[i]);
+      }
+    }
+  } else {
+    dbGroups[_group] = _addrs;
+  }
+
+  await _user.set("address_groups", dbGroups);
+  await _user.save();
+};
+
+/**
+ * Removes an array of accounts from a users address group in moralis db if the group exists
+ */
+removeFromAddressGroup = async (_addrs, _group, _user) => {
+  let dbGroups = _user.get("address_groups");
+  if (dbGroups[_group]) {
+    for (let i = 0; i < _addrs.length; i++) {
+      if (dbGroups[_group].includes(_addrs[i])) {
+        dbGroups[_group].splice(dbGroups[_group].indexOf(_addrs[i]), 1);
+      }
+    }
+  } else {
+    console.log("no groups with that name");
+  }
+
+  await _user.set("address_groups", dbGroups);
+  await _user.save();
+};
+
+/**
+ * Removes an array of addresses from each address group that contains it
+ * This is used when a user unlinks an address and needs to wipe it from each group
+ */
+wipeFromAddressGroups = async (_addrs, _user) => {
+  let dbGroups = _user.get("address_groups");
+  for (let i in _addrs) {
+    let addr = _addrs[i];
+    for (let group in dbGroups) {
+      if (dbGroups[group].includes(addr)) {
+        dbGroups[group].splice(dbGroups[group].indexOf(addr), 1);
+      }
+    }
+  }
+  await _user.set("address_groups", dbGroups);
+  await _user.save();
+};
+
+/**
+ * Removes an address group from a user
+ */
+removeAddressGroup = async (_groupName, _addrs) => {
+  let _shortHand = "\n";
+  for (let i = 0; i < _addrs.length; i++) {
+    _shortHand += shrinkAddr(_addrs[i]) + "\n";
+  }
+  if (confirm("Remove " + _groupName + " with " + _shortHand + " ?")) {
+    let user = Moralis.User.current();
+    let groups = await user.get("address_groups");
+    if (groups == undefined) {
+      groups = {};
+    }
+    try {
+      delete groups[_groupName];
+      await user.set("address_groups", groups);
+      await user.save();
+      await setUserStats(user);
+      await run();
+    } catch (error) {
+      console.log(
+        "failed to delete this group, are you sure it exists ?",
+        error
+      );
+    }
   }
 };
 
@@ -143,61 +314,7 @@ unhideContract = async (_address) => {
 };
 
 /**
- * Adds an address group to a user in Moralis DB under 'address_groups'
- */
-makeAddressGroup = async () => {
-  let _groupName = document.getElementById("group-input").value;
-  let sels = document.getElementsByClassName("group-checker");
-  _addresses = [];
-
-  for (let i = 0; i < sels.length; i++) {
-    if (sels[i].checked) {
-      _addresses.push(sels[i].value);
-    }
-  }
-
-  if (confirm("Create " + _groupName + " with:\n" + _addresses + " ?")) {
-    let user = Moralis.User.current();
-    let groups = await user.get("address_groups");
-    if (groups == undefined) {
-      groups = {};
-    }
-    groups[_groupName] = _addresses;
-    await user.set("address_groups", groups);
-    await user.save();
-
-    await setUserStats(user);
-    await run();
-  }
-};
-
-/**
- * Removes an address group from a user
- */
-removeAddressGroup = async (_groupName, _addrs) => {
-  if (confirm("Remove " + _groupName + " with " + _addrs + " ?")) {
-    let user = Moralis.User.current();
-    let groups = await user.get("address_groups");
-    if (groups == undefined) {
-      groups = {};
-    }
-    try {
-      delete groups[_groupName];
-      await user.set("address_groups", groups);
-      await user.save();
-      await setUserStats(user);
-      await run();
-    } catch (error) {
-      console.log(
-        "failed to delete this group, are you sure it exists ?",
-        error
-      );
-    }
-  }
-};
-
-/**
- * Get all user's linked accounts
+ * Get all user's linked accounts in proper format (checksummed)
  */
 getUserAccounts = async (_user) => {
   if (_user) {
@@ -224,10 +341,11 @@ getUserStats = async (_user) => {
       (uId = shrinkAddr(_user.id)),
       (email = await _user.get("email")),
       (links = await getUserAccounts(_user)),
-      (groups = await _user.get("address_groups"));
-    /// Set defaults if not set
-    username = !username ? "Not Set" : username;
+      (groups = await _user.get("address_groups")),
+      /// Set defaults if not set
+      (username = !username ? "Not Set" : username);
     email = !email ? "Not Set" : email;
+    links = !links ? [] : links;
     groups = !groups ? {} : groups;
   }
   return {
@@ -258,6 +376,7 @@ setUserStats = async (_user) => {
   document.getElementById("account-groups-section").innerHTML = "";
 
   let links = stats.links;
+
   let groups = stats.groups;
 
   if (links[0] != undefined) {

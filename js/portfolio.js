@@ -363,22 +363,25 @@ drawErc721 = (
     img.setAttribute("src", "images/ens.png");
     id.innerText = _metadata.name;
   } else {
-    id.innerText = "#" + _tokenId;
-    if (_metadata.image) {
-      try {
-        if (_metadata.image.substring(0, 7) == "ipfs://") {
-          img.setAttribute(
-            "src",
-            _metadata.image.replace(
-              "ipfs://",
-              "https://nftsource.mypinata.cloud/ipfs/"
-            )
-          );
-        } else {
-          img.setAttribute("src", _metadata.image);
+    id.innerText =
+      _tokenId.length > 8 ? "# " + shrinkAddr(_tokenId) : "# " + _tokenId;
+    if (_metadata) {
+      if (_metadata.image) {
+        try {
+          if (_metadata.image.substring(0, 7) == "ipfs://") {
+            img.setAttribute(
+              "src",
+              _metadata.image.replace(
+                "ipfs://",
+                "https://nftsource.mypinata.cloud/ipfs/"
+              )
+            );
+          } else {
+            img.setAttribute("src", _metadata.image);
+          }
+        } catch (error) {
+          img.setAttribute("src", "images/bayc.png");
         }
-      } catch (error) {
-        img.setAttribute("src", "images/bayc.png");
       }
     } else {
       /// no metadata
